@@ -45,12 +45,12 @@ def leave_bid_console():
 @auction_bp.route("/admin")
 @admin_required
 def admin_console():
-    available = Player.query.filter(
-        Player.status.in_(["registered", "in_auction"])).order_by(Player.name).all()
+    available = Player.query.filter_by(status="in_auction").order_by(Player.name).all()
     unsold = Player.query.filter_by(status="unsold").order_by(Player.name).all()
+    pending = Player.query.filter_by(status="registered").count()
     teams = Team.query.order_by(Team.name).all()
     return render_template(
         "auction/admin_console.html",
-        available=available, unsold=unsold, teams=teams,
+        available=available, unsold=unsold, pending=pending, teams=teams,
         state=auction_state.get_state(),
     )

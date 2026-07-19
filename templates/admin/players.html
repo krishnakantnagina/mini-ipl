@@ -47,6 +47,11 @@
         <td class="d-flex gap-1">
           <button class="btn btn-sm btn-primary">Save</button>
         </form>
+          {% if p.status == 'registered' %}
+          <form method="post" action="{{ url_for('admin.approve_player', player_id=p.id) }}">
+            <button class="btn btn-sm btn-warning" title="Approve this player for the auction">To Auction</button>
+          </form>
+          {% endif %}
           <form method="post" action="{{ url_for('admin.delete_player', player_id=p.id) }}"
                 onsubmit="return confirm('Delete {{ p.name }}?')">
             <button class="btn btn-sm btn-outline-danger">Delete</button>

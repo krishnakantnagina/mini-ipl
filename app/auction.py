@@ -51,8 +51,8 @@ def start_player(data):
         return
     with _lock:
         player = Player.query.get(data.get("player_id"))
-        if not player or player.status not in ("registered", "in_auction", "unsold"):
-            emit("auction_error", {"message": "Player not available for auction."})
+        if not player or player.status not in ("in_auction", "unsold"):
+            emit("auction_error", {"message": "Player not available - approve him for the auction on the Manage Players page first."})
             return
         player.status = "in_auction"
         db.session.commit()

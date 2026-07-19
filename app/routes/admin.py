@@ -147,6 +147,19 @@ def edit_player(player_id):
     return redirect(url_for("admin.players"))
 
 
+@admin_bp.route("/players/<int:player_id>/approve", methods=["POST"])
+@admin_required
+def approve_player(player_id):
+    p = Player.query.get_or_404(player_id)
+    if p.status != "registered":
+        flash(f"{p.name} is not waiting for approval.", "warning")
+    else:
+        p.status = "in_auction"
+        db.session.commit()
+        flash(f"{p.name} approved - he will now appear in the auction console.", "success")
+    return redirect(url_for("admin.players"))
+
+
 @admin_bp.route("/players/<int:player_id>/delete", methods=["POST"])
 @admin_required
 def delete_player(player_id):

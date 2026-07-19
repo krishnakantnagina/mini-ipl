@@ -8,7 +8,7 @@
       <div class="card-header fw-bold">Put a player up</div>
       <div class="card-body">
         {% if available or unsold %}
-        <label class="form-label">Waiting for auction</label>
+        <label class="form-label">Approved for auction</label>
         <select id="player-select" class="form-select mb-2">
           {% for p in available %}
           <option value="{{ p.id }}">{{ p.name }} — {{ p.role }} (base {{ p.base_price }} L)</option>
@@ -25,7 +25,13 @@
         {% endif %}
         <button id="start-button" class="btn btn-warning w-100">Start Bidding</button>
         {% else %}
-        <p class="text-muted text-center my-3">No players waiting for auction.</p>
+        <p class="text-muted text-center my-3">No players approved for the auction yet.</p>
+        {% endif %}
+        {% if pending %}
+        <p class="form-text mt-2 mb-0">
+          {{ pending }} registered player{{ 's' if pending != 1 }} waiting for approval —
+          <a href="{{ url_for('admin.players') }}">approve them</a> to bring them here.
+        </p>
         {% endif %}
       </div>
     </div>
