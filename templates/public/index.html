@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} — Home{% endblock %}
+{% block content %}
+
+{% if champion %}
+<!-- ======= champion banner ======= -->
+<div class="champion-banner mb-4">
+  <span class="champion-trophy">🏆</span>
+  <div>
+    <div class="champion-title">
+      <span class="team-dot" style="background:{{ team_color(champion) }}">{{ champion.short_name }}</span>
+      {{ champion.name }} are the CHAMPIONS!
+    </div>
+    <small>Winners of the Mini IPL — congratulations! 🎉</small>
+  </div>
+</div>
+{% endif %}
+
+<!-- ======= hero ======= -->
+<div class="hero mb-4">
+  <div class="text-center">
+    <span class="hero-kicker">🏏 SEASON {{ site_year }}</span>
+    <h1 class="hero-title">{{ site_name }}</h1>
+    <p class="hero-sub">{{ site_quote }}</p>
+    {% if registration_on or auction_on %}
+    <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+      {% if registration_on %}
+      <a href="{{ url_for('public.register') }}" class="btn btn-success btn-lg px-4">Register as Player</a>
+      {% endif %}
+      {% if auction_on %}
+      <a href="{{ url_for('auction.live_view') }}" class="btn btn-warning btn-lg px-4">🔨 Live Auction</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="hero-num">{{ counts.teams }}</span><span class="hero-label">Teams</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ counts.players }}</span><span class="hero-label">Players</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ counts.sold }}</span><span class="hero-label">Sold in Auction</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ counts.completed }}</span><span class="hero-label">Matches Played</span></div>
+  </div>
+</div>
+
+<!-- ======= main grid ======= -->
+<div class="row g-4">
+  <div class="col-lg-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-bold">⚡ Up Next</div>
+      <div class="card-body text-center d-flex flex-column justify-content-center">
+        {% if next_match %}
+        <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+          <div class="text-center">
+            <span class="team-dot team-dot-lg" style="background:{{ team_color(next_match.team1) }}">{{ next_match.team1.short_name }}</span>
+            <div class="small fw-semibold mt-1">{{ next_match.team1.short_name }}</div>
+          </div>
+          <span class="vs-chip">VS</span>
+          <div class="text-center">
+            <span class="team-dot team-dot-lg" style="background:{{ team_color(next_match.team2) }}">{{ next_match.team2.short_name }}</span>
+            <div class="small fw-semibold mt-1">{{ next_match.team2.short_name }}</div>
+          </div>
+        </div>
+        <h6 class="mb-1">{{ next_match.team1.name }} vs {{ next_match.team2.name }}</h6>
+        <p class="text-muted mb-0">
+          📅 {{ next_match.date.strftime('%d %b %Y') }}<br>
+          📍 {{ next_match.venue }}
+        </p>
+        {% else %}
+        <p class="text-muted my-4">No matches scheduled yet.</p>
+        {% endif %}
+      </div>
+      <div class="card-footer text-center bg-white">
+        <a href="{{ url_for('public.schedule') }}" class="btn btn-outline-primary btn-sm">Full schedule</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-bold">🏆 Points Table — Top 4</div>
+      <div class="card-body p-0">
+        {% if table and table[0].played is defined %}
+        <table class="table mb-0 align-middle home-table">
+          <tbody>
+            {% for row in table %}
+            <tr>
+              <td class="text-center text-muted" style="width:40px">{{ loop.index }}</td>
+              <td>
+                <a href="{{ url_for('public.team_detail', team_id=row.team.id) }}" class="team-link">
+                  <span class="team-dot team-dot-sm" style="background:{{ team_color(row.team) }}">{{ row.team.short_name }}</span>
+                  <span class="team-name small">{{ row.team.name }}</span>
+                </a>
+              </td>
+              <td class="text-center text-muted small">{{ row.played }} pl</td>
+              <td class="text-center"><span class="pts-big">{{ row.points }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted text-center my-4">No teams yet.</p>
+        {% endif %}
+      </div>
+      <div class="card-footer text-center bg-white">
+        <a href="{{ url_for('public.points') }}" class="btn btn-outline-primary btn-sm">Full table</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 col-md-12">
+    <div class="card h-100">
+      <div class="card-header fw-bold">🟠 Orange Cap Race</div>
+      <div class="card-body p-0">
+        {% if top_scorers %}
+        <ul class="list-group list-group-flush">
+          {% for player, runs in top_scorers %}
+          <li class="list-group-item d-flex align-items-center gap-2">
+            <span class="scorer-rank scorer-rank-{{ loop.index }}">{{ loop.index }}</span>
+            <span class="flex-grow-1">
+              {{ player.name }}
+              {% if player.team %}<small class="text-muted">· {{ player.team.short_name }}</small>{% endif %}
+            </span>
+            <strong>{{ runs }} runs</strong>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted text-center my-4">No stats yet.</p>
+        {% endif %}
+      </div>
+      <div class="card-footer text-center bg-white">
+        <a href="{{ url_for('public.stats') }}" class="btn btn-outline-primary btn-sm">All stats</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= recent results ======= -->
+{% if recent_results %}
+<h5 class="mt-4 mb-3 fw-bold">Recent Results</h5>
+<div class="row g-3">
+  {% for m in recent_results %}
+  <div class="col-md-4">
+    <a href="{{ url_for('public.match_detail', match_id=m.id) }}" class="text-decoration-none">
+      <div class="card result-card h-100">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="d-flex align-items-center gap-2">
+              <span class="team-dot team-dot-sm" style="background:{{ team_color(m.team1) }}">{{ m.team1.short_name }}</span>
+              <span class="small fw-semibold {% if m.winner_id == m.team1_id %}text-dark{% else %}text-muted{% endif %}">
+                {{ m.team1_runs }}/{{ m.team1_wickets }}
+              </span>
+            </span>
+            {% if m.winner_id == m.team1_id %}<span class="badge bg-success">W</span>{% endif %}
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="d-flex align-items-center gap-2">
+              <span class="team-dot team-dot-sm" style="background:{{ team_color(m.team2) }}">{{ m.team2.short_name }}</span>
+              <span class="small fw-semibold {% if m.winner_id == m.team2_id %}text-dark{% else %}text-muted{% endif %}">
+                {{ m.team2_runs }}/{{ m.team2_wickets }}
+              </span>
+            </span>
+            {% if m.winner_id == m.team2_id %}<span class="badge bg-success">W</span>{% endif %}
+          </div>
+          <div class="text-muted small mt-2">
+            {{ m.date.strftime('%d %b') }} ·
+            {% if m.winner %}{{ m.winner.short_name }} won{% else %}Tie / No result{% endif %}
+            {% if m.summary %} · {{ m.summary }}{% endif %}
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

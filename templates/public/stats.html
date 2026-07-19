@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Player Stats{% endblock %}
+{% block content %}
+<h3 class="mb-3">Player Stats</h3>
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header fw-bold bg-warning">🟠 Orange Cap — Most Runs</div>
+      {% if orange %}
+      <table class="table table-hover mb-0">
+        <thead><tr><th>#</th><th>Player</th><th>Team</th><th>Matches</th><th>Runs</th><th>SR</th></tr></thead>
+        <tbody>
+          {% for player, runs, balls, matches in orange %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ player.team.short_name if player.team else '-' }}</td>
+            <td>{{ matches }}</td>
+            <td class="fw-bold">{{ runs }}</td>
+            <td>{{ '%.1f' | format(runs * 100 / balls) if balls else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center my-4">No batting stats yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header fw-bold text-white" style="background:#6f42c1">🟣 Purple Cap — Most Wickets</div>
+      {% if purple %}
+      <table class="table table-hover mb-0">
+        <thead><tr><th>#</th><th>Player</th><th>Team</th><th>Matches</th><th>Wickets</th></tr></thead>
+        <tbody>
+          {% for player, wickets, conceded, matches in purple %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ player.team.short_name if player.team else '-' }}</td>
+            <td>{{ matches }}</td>
+            <td class="fw-bold">{{ wickets }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center my-4">No bowling stats yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header fw-bold">Best Bowling Figures (single match)</div>
+      {% if best_figures %}
+      <ul class="list-group list-group-flush">
+        {% for perf in best_figures %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ perf.player.name }}</span>
+          <strong>{{ perf.wickets }}/{{ perf.runs_conceded }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted text-center my-4">No bowling stats yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

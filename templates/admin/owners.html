@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Register Owners{% endblock %}
+{% block content %}
+<h3 class="mb-3">Owner Accounts</h3>
+
+<div class="card card-body mb-4">
+  <h6 class="fw-bold">Register a new owner</h6>
+  {% if free_teams %}
+  <form method="post" class="row g-2">
+    <div class="col-md-3">
+      <select name="team_id" class="form-select" required>
+        <option value="">Team...</option>
+        {% for t in free_teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3"><input name="username" class="form-control" placeholder="Owner ID (e.g. mm_owner)" required></div>
+    <div class="col-md-3"><input name="password" type="text" class="form-control" placeholder="Password (min 4 chars)" required minlength="4"></div>
+    <div class="col-md-3"><button class="btn btn-success w-100">Register Owner</button></div>
+  </form>
+  <small class="text-muted mt-1">Share the ID and password privately with the team's owner. They log in at <code>/owner/login</code>.</small>
+  {% else %}
+  <p class="text-muted mb-0">Every team already has an owner account.</p>
+  {% endif %}
+</div>
+
+{% if owners %}
+<div class="card">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Owner ID</th><th>Team</th><th style="width:320px">Actions</th></tr></thead>
+    <tbody>
+      {% for o in owners %}
+      <tr>
+        <td><code class="fs-6">{{ o.username }}</code></td>
+        <td>{{ o.team.name }}</td>
+        <td class="d-flex gap-1">
+          <form method="post" action="{{ url_for('admin.reset_owner_password', owner_id=o.id) }}" class="d-flex gap-1">
+            <input name="password" type="text" class="form-control form-control-sm" placeholder="New password" minlength="4" required>
+            <button class="btn btn-sm btn-outline-primary">Reset</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.delete_owner', owner_id=o.id) }}"
+                onsubmit="return confirm('Delete owner account {{ o.username }}?')">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted text-center my-5">No owner accounts yet. Register the first one above.</p>
+{% endif %}
+{% endblock %}

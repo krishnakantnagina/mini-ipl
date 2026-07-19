@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Manage Players{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Manage Players</h3>
+  <button class="btn btn-success" data-bs-toggle="collapse" data-bs-target="#addForm">+ Add player</button>
+</div>
+
+<div class="collapse mb-4" id="addForm">
+  <div class="card card-body">
+    <form method="post" class="row g-2">
+      <div class="col-md-3"><input name="name" class="form-control" placeholder="Name" required></div>
+      <div class="col-md-2"><input name="age" type="number" class="form-control" placeholder="Age" min="14"></div>
+      <div class="col-md-3">
+        <select name="role" class="form-select">
+          {% for r in roles %}<option>{{ r }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><input name="base_price" type="number" class="form-control" placeholder="Base (L)" value="20" min="1"></div>
+      <div class="col-md-2"><button class="btn btn-success w-100">Add</button></div>
+    </form>
+  </div>
+</div>
+
+{% if players %}
+<div class="card">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Name</th><th>Age</th><th>Role</th><th>Base</th><th>Status</th><th>Team</th><th style="width:220px">Actions</th></tr></thead>
+    <tbody>
+      {% for p in players %}
+      <tr>
+        <form method="post" action="{{ url_for('admin.edit_player', player_id=p.id) }}">
+        <td><input name="name" class="form-control form-control-sm" value="{{ p.name }}"></td>
+        <td><input name="age" type="number" class="form-control form-control-sm" value="{{ p.age or '' }}" style="width:70px"></td>
+        <td>
+          <select name="role" class="form-select form-select-sm">
+            {% for r in roles %}<option {% if p.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+          </select>
+        </td>
+        <td><input name="base_price" type="number" class="form-control form-control-sm" value="{{ p.base_price }}" style="width:80px"></td>
+        <td>
+          <select name="status" class="form-select form-select-sm">
+            {% for s in statuses %}<option {% if p.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+          </select>
+        </td>
+        <td>{{ p.team.short_name if p.team else '-' }}</td>
+        <td class="d-flex gap-1">
+          <button class="btn btn-sm btn-primary">Save</button>
+        </form>
+          <form method="post" action="{{ url_for('admin.delete_player', player_id=p.id) }}"
+                onsubmit="return confirm('Delete {{ p.name }}?')">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted text-center my-5">No players yet. Add one above or share the <a href="{{ url_for('public.register') }}">registration page</a>.</p>
+{% endif %}
+{% endblock %}

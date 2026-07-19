@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Manage Matches{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Manage Matches</h3>
+  <div class="d-flex gap-2">
+    <form method="post" action="{{ url_for('admin.generate_round_robin') }}">
+      <button class="btn btn-outline-primary">⚡ Generate round-robin fixtures</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.generate_playoffs') }}">
+      <button class="btn btn-warning">🏆 Generate playoffs (IPL style)</button>
+    </form>
+  </div>
+</div>
+
+<div class="card card-body mb-4">
+  <form method="post" class="row g-2">
+    <div class="col-md-3">
+      <select name="team1_id" class="form-select" required>
+        <option value="">Team 1...</option>
+        {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="team2_id" class="form-select" required>
+        <option value="">Team 2...</option>
+        {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2"><input type="date" name="date" class="form-control" required></div>
+    <div class="col-md-2"><input name="venue" class="form-control" placeholder="Venue" required></div>
+    <div class="col-md-2"><button class="btn btn-success w-100">Schedule</button></div>
+  </form>
+</div>
+
+{% if matches %}
+<div class="card">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Date</th><th>Match</th><th>Venue</th><th>Status</th><th style="width:320px">Actions</th></tr></thead>
+    <tbody>
+      {% for m in matches %}
+      <tr>
+        <td>{{ m.date.strftime('%d %b %Y') }}</td>
+        <td>
+          {{ m.team1.short_name }} vs {{ m.team2.short_name }}
+          {% if m.stage != 'league' %}
+          <span class="badge bg-dark text-warning">{{ stage_labels[m.stage] }}</span>
+          {% endif %}
+        </td>
+        <td>{{ m.venue }}</td>
+        <td>
+          {% if m.status == 'completed' %}
+            <span class="badge bg-success">Completed</span>
+            {% if m.winner %}<small>{{ m.winner.short_name }} won</small>{% else %}<small>Tie/NR</small>{% endif %}
+          {% else %}
+            <span class="badge bg-info">Scheduled</span>
+          {% endif %}
+        </td>
+        <td class="d-flex gap-1">
+          <a class="btn btn-sm btn-primary" href="{{ url_for('admin.result', match_id=m.id) }}">
+            {{ 'Edit result' if m.status == 'completed' else 'Enter result' }}
+          </a>
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.performances', match_id=m.id) }}">Performances</a>
+          <form method="post" action="{{ url_for('admin.delete_match', match_id=m.id) }}"
+                onsubmit="return confirm('Delete this match?')">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted text-center my-5">No matches yet. Schedule one above or generate round-robin fixtures.</p>
+{% endif %}
+{% endblock %}

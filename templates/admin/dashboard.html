@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<h3 class="mb-3">Admin Dashboard</h3>
+
+<div class="card mb-4">
+  <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom">
+    <div>
+      <span class="fw-bold">Player Registration:</span>
+      {% if registration_on %}
+      <span class="badge bg-success fs-6">OPEN</span>
+      <small class="text-muted ms-2">New players can sign up at /register</small>
+      {% else %}
+      <span class="badge bg-danger fs-6">CLOSED</span>
+      <small class="text-muted ms-2">Register button is hidden everywhere</small>
+      {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('admin.toggle_registration') }}">
+      {% if registration_on %}
+      <button class="btn btn-outline-danger">⏻ Turn OFF registration</button>
+      {% else %}
+      <button class="btn btn-success">⏻ Turn ON registration</button>
+      {% endif %}
+    </form>
+  </div>
+  <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <span class="fw-bold">Auction Room:</span>
+      {% if auction_on %}
+      <span class="badge bg-success fs-6">OPEN</span>
+      <small class="text-muted ms-2">Viewers can watch and owners can bid</small>
+      {% else %}
+      <span class="badge bg-danger fs-6">CLOSED</span>
+      <small class="text-muted ms-2">Auction pages and bids are switched off</small>
+      {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('admin.toggle_auction') }}">
+      {% if auction_on %}
+      <button class="btn btn-outline-danger">⏻ Turn OFF auction</button>
+      {% else %}
+      <button class="btn btn-success">⏻ Turn ON auction</button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.players }}</h2><span class="text-muted">Players</span></div></div>
+  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.registered }}</h2><span class="text-muted">Awaiting auction</span></div></div>
+  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.sold }}</h2><span class="text-muted">Sold</span></div></div>
+  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.teams }}</h2><span class="text-muted">Teams</span></div></div>
+  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.matches }}</h2><span class="text-muted">Matches</span></div></div>
+  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.completed }}</h2><span class="text-muted">Completed</span></div></div>
+</div>
+
+<div class="list-group">
+  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.players') }}">👤 Manage Players</a>
+  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.teams') }}">🏢 Manage Teams &amp; Access Codes</a>
+  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.owners') }}">🔑 Register Owners (ID &amp; password)</a>
+  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.matches') }}">📅 Schedule Matches &amp; Enter Results</a>
+  <a class="list-group-item list-group-item-action" href="{{ url_for('auction.admin_console') }}">🔨 Run Live Auction</a>
+  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.site_settings') }}">🎨 Home Page Settings (site name, quote, year)</a>
+</div>
+{% endblock %}

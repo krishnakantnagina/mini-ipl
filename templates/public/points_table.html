@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Points Table{% endblock %}
+{% block content %}
+{% set palette = ['#1d4e89', '#c8102e', '#7b2d8b', '#e6a817', '#0f7b6c', '#d35400', '#2e4057', '#5c821a'] %}
+
+<div class="card pts-card">
+  <div class="pts-header">
+    <div>
+      <h4 class="mb-0 text-white">🏆 Points Table</h4>
+      <small class="text-white-50">Win = 2 pts &middot; Tie / No result = 1 pt &middot; Ranked by points, then NRR</small>
+    </div>
+  </div>
+
+  {% if table %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 pts-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width:56px">#</th>
+          <th>Team</th>
+          <th class="text-center">P</th>
+          <th class="text-center">W</th>
+          <th class="text-center">L</th>
+          <th class="text-center">T/NR</th>
+          <th class="text-center">Pts</th>
+          <th class="text-center">NRR</th>
+          <th class="text-center d-none d-md-table-cell">Form</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in table %}
+        <tr class="{% if loop.index <= 4 %}pts-q{% endif %} {% if loop.index == 4 %}pts-cutoff{% endif %}">
+          <td class="text-center">
+            <span class="rank-num">{{ loop.index }}</span>
+            {% if loop.index <= 4 %}<span class="q-mark" title="Playoff spot">Q</span>{% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('public.team_detail', team_id=row.team.id) }}" class="team-link">
+              <span class="team-dot" style="background:{{ palette[row.team.id % 8] }}">{{ row.team.short_name }}</span>
+              <span class="team-name">{{ row.team.name }}</span>
+            </a>
+          </td>
+          <td class="text-center">{{ row.played }}</td>
+          <td class="text-center text-success fw-semibold">{{ row.won }}</td>
+          <td class="text-center text-danger">{{ row.lost }}</td>
+          <td class="text-center text-muted">{{ row.tied }}</td>
+          <td class="text-center"><span class="pts-big">{{ row.points }}</span></td>
+          <td class="text-center">
+            <span class="nrr {{ 'nrr-pos' if row.nrr > 0 else 'nrr-neg' if row.nrr < 0 else '' }}">
+              {{ '%+.3f' | format(row.nrr) }}
+            </span>
+          </td>
+          <td class="text-center d-none d-md-table-cell">
+            {% if row.form %}
+              {% for r in row.form %}
+                <span class="form-badge form-{{ r }}">{{ r }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
+    <span class="small text-muted"><span class="q-mark">Q</span> Top 4 qualify for the playoffs</span>
+    <span class="small text-muted">
+      Form (last 5):
+      <span class="form-badge form-W">W</span> won
+      <span class="form-badge form-L">L</span> lost
+      <span class="form-badge form-T">T</span> tie/NR
+    </span>
+  </div>
+  {% else %}
+  <p class="text-muted text-center my-5">No teams yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

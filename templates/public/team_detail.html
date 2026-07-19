@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">{{ team.name }} <span class="badge bg-primary">{{ team.short_name }}</span></h3>
+  <div>
+    <span class="badge bg-success stat-badge">Purse left: {{ team.purse | money }}</span>
+    <span class="badge bg-secondary stat-badge">Spent: {{ team.total_spent | money }}</span>
+  </div>
+</div>
+<p class="text-muted">Owner: {{ team.owner_name }}</p>
+
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header fw-bold">Squad ({{ team.players | length }})</div>
+      {% if team.players %}
+      <table class="table table-hover mb-0">
+        <thead><tr><th>Player</th><th>Role</th><th>Bought for</th></tr></thead>
+        <tbody>
+          {% for p in team.players %}
+          <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.role }}</td>
+            <td>{{ p.sold_price | money if p.sold_price else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center my-4">No players bought yet.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header fw-bold">Matches</div>
+      {% if matches %}
+      <ul class="list-group list-group-flush">
+        {% for m in matches %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>
+            <a href="{{ url_for('public.match_detail', match_id=m.id) }}">
+              {{ m.team1.short_name }} vs {{ m.team2.short_name }}
+            </a>
+            <small class="text-muted">{{ m.date.strftime('%d %b') }}</small>
+          </span>
+          {% if m.status == 'completed' %}
+            {% if m.winner_id == team.id %}
+              <span class="badge bg-success">Won</span>
+            {% elif m.winner_id %}
+              <span class="badge bg-danger">Lost</span>
+            {% else %}
+              <span class="badge bg-secondary">Tie/NR</span>
+            {% endif %}
+          {% else %}
+            <span class="badge bg-info">Upcoming</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted text-center my-4">No matches yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

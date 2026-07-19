@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Schedule{% endblock %}
+
+{% macro match_row(m, next_id=None) %}
+<a href="{{ url_for('public.match_detail', match_id=m.id) }}" class="text-decoration-none">
+  <div class="card sched-card {% if m.id == next_id %}sched-next{% endif %} mb-2">
+    <div class="card-body d-flex align-items-center gap-3 py-2 px-3 flex-wrap">
+      <div class="date-block">
+        <span class="date-day">{{ m.date.strftime('%d') }}</span>
+        <span class="date-mon">{{ m.date.strftime('%b') }}</span>
+      </div>
+
+      <div class="flex-grow-1">
+        <div class="sched-team {% if m.status == 'completed' and m.winner_id == m.team1_id %}sched-winner{% endif %}">
+          <span class="team-dot team-dot-sm" style="background:{{ team_color(m.team1) }}">{{ m.team1.short_name }}</span>
+          <span class="sched-name">{{ m.team1.name }}</span>
+          {% if m.status == 'completed' %}
+          <span class="sched-score">{{ m.team1_runs }}/{{ m.team1_wickets }} <small>({{ m.team1_overs }})</small></span>
+          {% endif %}
+        </div>
+        <div class="sched-team mt-1 {% if m.status == 'completed' and m.winner_id == m.team2_id %}sched-winner{% endif %}">
+          <span class="team-dot team-dot-sm" style="background:{{ team_color(m.team2) }}">{{ m.team2.short_name }}</span>
+          <span class="sched-name">{{ m.team2.name }}</span>
+          {% if m.status == 'completed' %}
+          <span class="sched-score">{{ m.team2_runs }}/{{ m.team2_wickets }} <small>({{ m.team2_overs }})</small></span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="text-end sched-meta">
+        {% if m.stage != 'league' %}
+        <span class="badge bg-dark text-warning mb-1">{{ stage_labels[m.stage] }}</span><br>
+        {% endif %}
+        {% if m.id == next_id %}
+        <span class="badge bg-warning text-dark mb-1">NEXT MATCH</span><br>
+        {% endif %}
+        {% if m.status == 'completed' %}
+          {% if m.winner %}
+          <span class="badge bg-success mb-1">{{ m.winner.short_name }} won</span>
+          {% else %}
+          <span class="badge bg-secondary mb-1">Tie / No result</span>
+          {% endif %}
+          {% if m.summary %}<br><small class="text-muted">{{ m.summary }}</small>{% endif %}
+        {% else %}
+          <small class="text-muted">🕐 {{ m.date.strftime('%A') }}</small>
+        {% endif %}
+        <br><small class="text-muted">📍 {{ m.venue }}</small>
+      </div>
+    </div>
+  </div>
+</a>
+{% endmacro %}
+
+{% block content %}
+<div class="card pts-card mb-4">
+  <div class="pts-header">
+    <div>
+      <h4 class="mb-0 text-white">📅 Match Schedule</h4>
+      <small class="text-white-50">{{ upcoming | length }} upcoming &middot; {{ completed | length }} completed</small>
+    </div>
+  </div>
+</div>
+
+{% if not upcoming and not completed and not playoffs %}
+<p class="text-muted text-center my-5">No matches scheduled yet.</p>
+{% endif %}
+
+{% if playoffs %}
+<h5 class="fw-bold mb-3">🏆 Playoffs</h5>
+{% for m in playoffs %}{{ match_row(m) }}{% endfor %}
+{% endif %}
+
+{% if upcoming %}
+<h5 class="fw-bold mb-3">⚡ Upcoming</h5>
+{% for m in upcoming %}{{ match_row(m, next_id) }}{% endfor %}
+{% endif %}
+
+{% if completed %}
+<h5 class="fw-bold mb-3 mt-4">✅ Completed</h5>
+{% for m in completed %}{{ match_row(m) }}{% endfor %}
+{% endif %}
+{% endblock %}

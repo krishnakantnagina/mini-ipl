@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}My Team{% endblock %}
+{% block content %}
+
+<!-- ======= team header ======= -->
+<div class="owner-header mb-4" style="background: linear-gradient(135deg, #0d1b3e 0%, {{ team_color(team) }} 130%);">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <span class="team-dot team-dot-xl" style="background:{{ team_color(team) }}">{{ team.short_name }}</span>
+    <div>
+      <h3 class="text-white mb-0">{{ team.name }}</h3>
+      <span class="text-white-50">Owner: {{ team.owner_name }} · logged in as <strong class="text-white">{{ owner.username }}</strong></span>
+    </div>
+    <a href="{{ url_for('auction.bid_console') }}" class="btn btn-warning btn-lg ms-auto">🔨 Bidding Console</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="hero-num">{{ team.purse | money }}</span><span class="hero-label">Purse Left</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ team.total_spent | money }}</span><span class="hero-label">Spent</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ team.players | length }}</span><span class="hero-label">Squad</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ record.wins }}W · {{ record.losses }}L{% if record.ties %} · {{ record.ties }}T{% endif %}</span><span class="hero-label">Record</span></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- ======= squad ======= -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header fw-bold">👥 My Squad ({{ team.players | length }})</div>
+      {% if team.players %}
+      <table class="table table-hover align-middle mb-0">
+        <thead class="squad-head">
+          <tr><th>Player</th><th>Role</th><th class="text-end pe-3">Bought for</th></tr>
+        </thead>
+        <tbody>
+          {% for p in team.players | sort(attribute='sold_price', reverse=True) %}
+          <tr>
+            <td class="fw-semibold">{{ p.name }}</td>
+            <td><span class="role-badge role-{{ p.role | lower | replace('-', '') }}">{{ p.role }}</span></td>
+            <td class="text-end pe-3 fw-bold">{{ p.sold_price | money if p.sold_price else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted text-center my-5">No players yet — win some in the auction! 🔨</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ======= matches ======= -->
+  <div class="col-lg-5">
+    <div class="card mb-4">
+      <div class="card-header fw-bold">⚡ Next Matches</div>
+      {% if upcoming %}
+      <ul class="list-group list-group-flush">
+        {% for m in upcoming %}
+        {% set opp = m.team2 if m.team1_id == team.id else m.team1 %}
+        <li class="list-group-item d-flex align-items-center gap-3">
+          <div class="date-block date-block-sm">
+            <span class="date-day">{{ m.date.strftime('%d') }}</span>
+            <span class="date-mon">{{ m.date.strftime('%b') }}</span>
+          </div>
+          <div>
+            <span class="d-flex align-items-center gap-2">
+              vs <span class="team-dot team-dot-sm" style="background:{{ team_color(opp) }}">{{ opp.short_name }}</span>
+              <span class="fw-semibold">{{ opp.name }}</span>
+            </span>
+            <small class="text-muted">📍 {{ m.venue }}</small>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted text-center my-4">No upcoming matches.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-header fw-bold">📋 Results</div>
+      {% set played = matches | selectattr('status', 'equalto', 'completed') | list %}
+      {% if played %}
+      <ul class="list-group list-group-flush">
+        {% for m in played | reverse %}
+        {% set opp = m.team2 if m.team1_id == team.id else m.team1 %}
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <span class="team-dot team-dot-sm" style="background:{{ team_color(opp) }}">{{ opp.short_name }}</span>
+          <a href="{{ url_for('public.match_detail', match_id=m.id) }}" class="flex-grow-1 text-decoration-none text-body">
+            vs {{ opp.name }}
+            <small class="text-muted">· {{ m.date.strftime('%d %b') }}</small>
+          </a>
+          {% if m.winner_id == team.id %}<span class="form-badge form-W">W</span>
+          {% elif m.winner_id %}<span class="form-badge form-L">L</span>
+          {% else %}<span class="form-badge form-T">T</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted text-center my-4">No matches played yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

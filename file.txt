@@ -1,0 +1,246 @@
+==========================================================
+ MINI IPL MANAGEMENT SYSTEM - FULL PLAN + STEP-BY-STEP PROMPTS
+==========================================================
+
+HOW TO USE THIS FILE
+--------------------
+Part 1 is the full plan (the big picture of the website).
+Part 2 is a list of small numbered prompts. Follow them in order.
+Copy one prompt at a time, change/improve it if you want, and give
+it to Claude Code (or build it yourself). Each step builds on the
+previous one, so finish a step before starting the next.
+
+
+==========================================================
+ PART 1 - THE FULL PLAN
+==========================================================
+
+WHAT WE ARE BUILDING
+--------------------
+A website that manages a mini IPL tournament from start to end:
+  1. Players register themselves
+  2. Team owners buy players in a LIVE auction (real-time bidding)
+  3. Teams get formed automatically from auction results
+  4. Admin schedules matches
+  5. Admin enters match results (final scores only, not ball-by-ball)
+  6. Points table updates automatically (2 points win, 1 point tie)
+  7. Player stats: Orange Cap (most runs), Purple Cap (most wickets)
+  8. Admin controls everything from one dashboard
+
+TECH STACK
+----------
+- Python + Flask (web framework)
+- Jinja2 templates (HTML pages made by the server)
+- Flask-SocketIO (for the live auction - real-time updates)
+- Flask-SQLAlchemy + SQLite (database in a single file, no setup)
+- Bootstrap 5 from CDN (for good-looking pages without much CSS)
+
+LOGIN RULES
+-----------
+- Only ONE admin login (username + password).
+- Everyone else uses public pages - no account needed.
+- Team owners do NOT have accounts. Each team gets a secret
+  6-character ACCESS CODE. The admin shares it with the owner.
+  The owner types this code on the bidding page to bid for
+  their team during the auction.
+
+PROJECT STRUCTURE (final shape of the folder)
+---------------------------------------------
+New folder/
+|-- run.py                  -> starts the website
+|-- requirements.txt        -> list of Python packages
+|-- config.py               -> secret key, admin username/password
+|-- seed.py                 -> fills database with sample data
+|-- app/
+|   |-- __init__.py         -> creates the Flask app
+|   |-- models.py           -> database tables
+|   |-- auction.py          -> live auction logic (SocketIO)
+|   |-- utils.py            -> points table calculation, login check
+|   |-- routes/
+|       |-- public.py       -> pages everyone can see
+|       |-- admin.py        -> admin-only pages
+|       |-- auction_routes.py -> auction pages
+|-- templates/              -> all HTML pages
+|-- static/                 -> CSS and JavaScript files
+
+DATABASE TABLES
+---------------
+Player      : name, age, role (Batsman/Bowler/All-rounder/
+              Wicketkeeper), base_price, status (registered/
+              in_auction/sold/unsold), sold_price, team_id
+Team        : name, short_name, owner_name, purse (money left,
+              e.g. 100 Cr), access_code (secret 6 characters)
+Match       : team1, team2, date, venue, status (scheduled/
+              completed), runs/wickets/overs for both teams,
+              winner, summary text
+Performance : match, player, runs scored, balls, wickets taken,
+              runs conceded (used for Orange/Purple Cap stats)
+
+PAGES OF THE WEBSITE
+--------------------
+Public pages (no login):
+  /            home page (next match + mini points table)
+  /register    player registration form
+  /players     list of all players with filters
+  /teams       all teams; /teams/<id> shows one team's squad
+  /schedule    all fixtures and results
+  /points      points table (auto calculated)
+  /stats       Orange Cap, Purple Cap, best figures
+  /auction     live auction viewer (watch bids happen)
+  /auction/bid team owner bidding page (needs access code)
+
+Admin pages (login needed):
+  /admin/login             admin login
+  /admin                   dashboard with counts + quick links
+  /admin/players           approve/edit/delete players
+  /admin/teams             create teams, set purse, see access codes
+  /admin/matches           create fixtures
+  /admin/matches/<id>/result        enter final score + winner
+  /admin/matches/<id>/performances  enter player runs/wickets
+  /auction/admin           run the auction (start player, sold/unsold)
+
+HOW THE LIVE AUCTION WORKS
+--------------------------
+1. Admin opens /auction/admin, picks a player, clicks "Start Bidding".
+2. All owners on /auction/bid see the player appear instantly.
+3. An owner clicks BID -> bid goes up by the increment.
+4. Server checks the owner's purse before accepting any bid.
+5. Everyone (including public /auction viewers) sees the new bid live.
+6. Admin clicks SOLD -> player joins that team, money is deducted,
+   everything is saved to database. Or UNSOLD -> player marked unsold.
+
+BUILD ORDER (why the prompts are in this order)
+-----------------------------------------------
+Scaffold -> Database -> Admin pages -> Public pages ->
+Results + Points table -> Stats -> Auction -> Polish
+Each stage only needs the stages before it, so the website
+always runs after every step.
+
+
+==========================================================
+ PART 2 - STEP-BY-STEP PROMPTS (follow in order)
+==========================================================
+
+----------------------------------------------------------
+PROMPT 1 - Project skeleton + admin login
+----------------------------------------------------------
+Create a Flask project skeleton for a Mini IPL Management System
+in this folder. Make: requirements.txt (flask, flask-sqlalchemy,
+flask-socketio), config.py (SECRET_KEY, admin username "admin" and
+a hashed password), run.py, and an app/ package with an app factory
+in __init__.py. Add a base.html template using Bootstrap 5 from CDN
+with a navbar (links: Home, Players, Teams, Schedule, Points, Stats,
+Auction, Admin). Add admin login and logout pages using sessions,
+and an @admin_required decorator in app/utils.py. Add a simple home
+page at "/" so I can test the site runs.
+
+----------------------------------------------------------
+PROMPT 2 - Database tables + sample data
+----------------------------------------------------------
+Add SQLite database models in app/models.py using Flask-SQLAlchemy:
+Player (name, age, role, base_price, status registered/in_auction/
+sold/unsold, sold_price, team_id), Team (name, short_name,
+owner_name, purse default 100 crore, access_code random 6 chars),
+Match (team1, team2, date, venue, status scheduled/completed, runs/
+wickets/overs for both teams, winner nullable, summary), and
+Performance (match, player, runs, balls, wickets, runs_conceded).
+Also create seed.py that creates the database and fills it with
+8 teams and about 40 players with realistic names and prices.
+
+----------------------------------------------------------
+PROMPT 3 - Admin pages to manage players and teams
+----------------------------------------------------------
+Build admin pages (login required): /admin dashboard showing counts
+of players, teams and matches with quick links; /admin/players page
+to list all players with their status, edit, delete, and add new
+players directly; /admin/teams page to create and edit teams, set
+their purse, and view or regenerate each team's secret access code.
+Use Bootstrap tables and forms, with flash messages after actions.
+
+----------------------------------------------------------
+PROMPT 4 - Public pages: registration, players, teams
+----------------------------------------------------------
+Build the public pages: /register - a form where a player registers
+(name, age, role, base price) and gets status "registered";
+/players - list all players with filters by role and status, showing
+sold price and team if sold; /teams - cards for all teams showing
+owner and money left; /teams/<id> - one team's full squad with
+prices paid and total spent. No login needed for these pages.
+
+----------------------------------------------------------
+PROMPT 5 - Match scheduling
+----------------------------------------------------------
+Build match scheduling: /admin/matches page (login required) where
+admin creates a fixture by picking two different teams, date, and
+venue, plus a one-click "generate round robin" button that creates
+fixtures so every team plays every other team once. Public page
+/schedule lists all matches in date order showing upcoming fixtures
+and finished results.
+
+----------------------------------------------------------
+PROMPT 6 - Result entry + points table
+----------------------------------------------------------
+Build result entry and points table: /admin/matches/<id>/result
+(login required) - a form to enter runs, wickets and overs for both
+teams and pick the winner (or tie/no result); saving marks the match
+completed. Public page /points shows the points table computed
+automatically from completed matches: 2 points for a win, 1 point
+for tie/no-result, columns for played/won/lost/points/NRR, ranked
+by points then NRR. Put the calculation in app/utils.py. Also show
+a mini points table on the home page.
+
+----------------------------------------------------------
+PROMPT 7 - Player stats (Orange Cap / Purple Cap)
+----------------------------------------------------------
+Build player stats: /admin/matches/<id>/performances (login
+required) - a batch form to enter runs, balls, wickets and runs
+conceded for players who played in that match. Public page /stats
+shows leaderboards: Orange Cap (most total runs), Purple Cap (most
+total wickets), and best bowling figures, aggregated from all
+Performance rows, showing the player's team next to their name.
+
+----------------------------------------------------------
+PROMPT 8 - Live auction with real-time bidding
+----------------------------------------------------------
+Build the live auction using Flask-SocketIO. Three pages:
+1) /auction/admin (login required) - admin picks a player with
+   status "registered", clicks Start Bidding, sees live bids, and
+   clicks SOLD (assign player to the leading team, deduct purse,
+   save sold_price, all saved to the database immediately) or
+   UNSOLD.
+2) /auction/bid - a team owner enters their team's secret access
+   code, then sees the current player and a big BID button that
+   raises the bid by the increment; show their remaining purse.
+3) /auction - public live viewer showing current player, current
+   bid, leading team, and a feed of sold/unsold players.
+All bids must be validated on the SERVER: reject a bid if the
+team's purse cannot cover it. Keep auction state in memory in
+app/auction.py; use static/js/auction.js for the SocketIO client.
+All three pages must update instantly when anything happens.
+
+----------------------------------------------------------
+PROMPT 9 - Polish + full test
+----------------------------------------------------------
+Polish the whole site: consistent navbar with active page
+highlighted, flash messages everywhere, friendly empty states
+(e.g. "No matches scheduled yet"), and a nice home page showing
+the next match, mini points table, and top 3 run scorers. Update
+seed.py to create a full demo tournament (some completed matches
+with results and performances, some upcoming). Then test the full
+flow end to end: register a player, approve them, auction them to
+a team in two browser windows, schedule a match, enter its result,
+and confirm the points table and stats update correctly.
+
+----------------------------------------------------------
+HOW TO RUN THE SITE (after prompt 1 onwards)
+----------------------------------------------------------
+1. pip install -r requirements.txt
+2. python seed.py        (after prompt 2 - creates sample data)
+3. python run.py
+4. Open http://127.0.0.1:5000 in the browser
+   Admin login -> username: admin
+
+TIP: After every prompt, run the site and click around before
+moving to the next prompt. If something can be improved, edit the
+next prompt before sending it - these prompts are a starting idea,
+not a fixed rule.

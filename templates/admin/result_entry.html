@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Enter Result{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header fw-bold">
+        Result: {{ m.team1.name }} vs {{ m.team2.name }} — {{ m.date.strftime('%d %b %Y') }}
+        {% if m.stage != 'league' %}
+        <span class="badge bg-dark text-warning">{{ stage_labels[m.stage] }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="row">
+            {% for team, prefix in [(m.team1, 'team1'), (m.team2, 'team2')] %}
+            <div class="col-md-6">
+              <h6>{{ team.name }}</h6>
+              <div class="mb-2">
+                <label class="form-label">Runs</label>
+                <input type="number" name="{{ prefix }}_runs" class="form-control" min="0"
+                       value="{{ m[prefix + '_runs'] if m[prefix + '_runs'] is not none else '' }}" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Wickets</label>
+                <input type="number" name="{{ prefix }}_wickets" class="form-control" min="0" max="10"
+                       value="{{ m[prefix + '_wickets'] if m[prefix + '_wickets'] is not none else '' }}" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Overs (e.g. 19.3 = 19 ov 3 balls)</label>
+                <input type="number" step="0.1" name="{{ prefix }}_overs" class="form-control" min="0" max="20"
+                       value="{{ m[prefix + '_overs'] if m[prefix + '_overs'] is not none else '' }}" required>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mb-3 mt-2">
+            <label class="form-label">Winner</label>
+            <select name="winner" class="form-select">
+              <option value="{{ m.team1_id }}" {% if m.winner_id == m.team1_id %}selected{% endif %}>{{ m.team1.name }}</option>
+              <option value="{{ m.team2_id }}" {% if m.winner_id == m.team2_id %}selected{% endif %}>{{ m.team2.name }}</option>
+              {% if m.stage == 'league' %}
+              <option value="" {% if m.status == 'completed' and not m.winner_id %}selected{% endif %}>Tie / No result</option>
+              {% endif %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Summary (optional)</label>
+            <input name="summary" class="form-control" maxlength="200"
+                   placeholder="e.g. Won by 20 runs" value="{{ m.summary or '' }}">
+          </div>
+          <button class="btn btn-success">Save Result</button>
+          <a href="{{ url_for('admin.matches') }}" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

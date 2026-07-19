@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Live Auction{% endblock %}
+{% block content %}
+<h3 class="mb-3">🔨 Live Auction</h3>
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="card text-center">
+      <div class="card-header fw-bold">Current Player</div>
+      <div class="card-body py-5" id="current-player-box">
+        <div id="no-player" {% if state.active %}style="display:none"{% endif %}>
+          <p class="text-muted fs-5 mb-0">Waiting for the auctioneer to put a player up...</p>
+        </div>
+        <div id="player-info" {% if not state.active %}style="display:none"{% endif %}>
+          <h2 id="p-name">{{ state.player_name or '' }}</h2>
+          <p class="text-muted" id="p-role">{{ state.player_role or '' }}</p>
+          <p>Base price: <strong id="p-base">{{ state.base_price or '' }}</strong> L</p>
+          <h1 class="display-4 text-success" id="p-bid">{{ state.current_bid or '—' }}</h1>
+          <p class="fs-5">Leading: <strong id="p-team">{{ state.leading_team or 'No bids yet' }}</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header fw-bold">Bid Ticker</div>
+      <ul class="list-group list-group-flush ticker" id="ticker">
+        {% for line in state.history %}<li class="list-group-item">{{ line }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header fw-bold">Recently Sold / Unsold</div>
+      <ul class="list-group list-group-flush" id="done-feed">
+        {% for p in recent %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ p.name }}</span>
+          {% if p.status == 'sold' %}
+          <span><span class="badge bg-success">SOLD</span> {{ p.team.short_name }} · {{ p.sold_price }} L</span>
+          {% else %}
+          <span class="badge bg-danger">UNSOLD</span>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted text-center">Nothing auctioned yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="text-center mt-3">
+      <a href="{{ url_for('auction.bid_console') }}" class="btn btn-warning">I'm a team owner — let me bid</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/auction.js') }}"></script>
+{% endblock %}

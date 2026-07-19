@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('public.index') }}">🏏 {{ site_name }}</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        {% set nav = [
+          ('public.players', 'Players'),
+          ('public.teams', 'Teams'),
+          ('public.schedule', 'Schedule'),
+          ('public.points', 'Points'),
+          ('public.stats', 'Stats'),
+        ] %}
+        {% if auction_on or session.get('is_admin') %}
+          {% set nav = nav + [('auction.live_view', 'Auction')] %}
+        {% endif %}
+        {% for endpoint, label in nav %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == endpoint %}active{% endif %}"
+             href="{{ url_for(endpoint) }}">{{ label }}</a>
+        </li>
+        {% endfor %}
+        {% if registration_on %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'public.register' %}active{% endif %}"
+             href="{{ url_for('public.register') }}">Register</a>
+        </li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav">
+        {% if session.get('owner_id') %}
+        <li class="nav-item"><a class="nav-link fw-bold" href="{{ url_for('owner.dashboard') }}">My Team</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('owner.logout') }}">Logout</a></li>
+        {% elif session.get('is_admin') %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.logout') }}">Logout</a></li>
+        {% else %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('owner.login') }}">Owner Login</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.login') }}">Admin Login</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container pb-5">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

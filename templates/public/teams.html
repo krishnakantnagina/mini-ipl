@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Teams{% endblock %}
+{% block content %}
+<h3 class="mb-3">Teams</h3>
+{% if teams %}
+<div class="row g-3">
+  {% for t in teams %}
+  <div class="col-md-3 col-sm-6">
+    <div class="card h-100 text-center">
+      <div class="card-body">
+        <h5 class="card-title">{{ t.name }}</h5>
+        <span class="badge bg-primary mb-2">{{ t.short_name }}</span>
+        <p class="mb-1 text-muted">Owner: {{ t.owner_name }}</p>
+        <p class="mb-1">Purse left: <strong>{{ t.purse | money }}</strong></p>
+        <p class="mb-2">Squad: <strong>{{ t.players | length }}</strong> players</p>
+        <a href="{{ url_for('public.team_detail', team_id=t.id) }}" class="btn btn-outline-primary btn-sm">View squad</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-muted text-center my-5">No teams created yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Match Details{% endblock %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-body text-center">
+    <h4>{{ match.team1.name }} <span class="text-muted">vs</span> {{ match.team2.name }}</h4>
+    <p class="text-muted mb-2">{{ match.date.strftime('%d %B %Y') }} · {{ match.venue }}</p>
+    {% if match.status == 'completed' %}
+      <div class="row justify-content-center my-3">
+        <div class="col-auto">
+          <h5>{{ match.team1.short_name }}</h5>
+          <h3>{{ match.team1_runs }}/{{ match.team1_wickets }}</h3>
+          <small class="text-muted">({{ match.team1_overs }} overs)</small>
+        </div>
+        <div class="col-auto d-flex align-items-center px-4"><h4 class="text-muted">-</h4></div>
+        <div class="col-auto">
+          <h5>{{ match.team2.short_name }}</h5>
+          <h3>{{ match.team2_runs }}/{{ match.team2_wickets }}</h3>
+          <small class="text-muted">({{ match.team2_overs }} overs)</small>
+        </div>
+      </div>
+      {% if match.winner %}
+        <span class="badge bg-success fs-6">{{ match.winner.name }} won</span>
+      {% else %}
+        <span class="badge bg-secondary fs-6">Tie / No result</span>
+      {% endif %}
+      {% if match.summary %}<p class="mt-2 mb-0">{{ match.summary }}</p>{% endif %}
+    {% else %}
+      <span class="badge bg-info fs-6">Upcoming</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if match.performances %}
+<div class="card">
+  <div class="card-header fw-bold">Player Performances</div>
+  <table class="table table-hover mb-0">
+    <thead><tr><th>Player</th><th>Team</th><th>Runs (balls)</th><th>Wickets</th><th>Runs conceded</th></tr></thead>
+    <tbody>
+      {% for perf in match.performances %}
+      <tr>
+        <td>{{ perf.player.name }}</td>
+        <td>{{ perf.player.team.short_name if perf.player.team else '-' }}</td>
+        <td>{% if perf.balls or perf.runs %}{{ perf.runs }} ({{ perf.balls }}){% else %}-{% endif %}</td>
+        <td>{{ perf.wickets or '-' }}</td>
+        <td>{{ perf.runs_conceded or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

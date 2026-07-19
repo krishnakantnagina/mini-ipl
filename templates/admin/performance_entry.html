@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Player Performances{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header fw-bold">
+    Performances: {{ m.team1.name }} vs {{ m.team2.name }} — {{ m.date.strftime('%d %b %Y') }}
+  </div>
+  <div class="card-body">
+    {% if squad %}
+    <p class="text-muted">Fill only the players who batted/bowled. Leave others as 0.</p>
+    <form method="post">
+      <table class="table table-sm">
+        <thead>
+          <tr><th>Player</th><th>Team</th><th>Runs</th><th>Balls</th><th>Wickets</th><th>Runs conceded</th></tr>
+        </thead>
+        <tbody>
+          {% for p in squad %}
+          {% set perf = existing.get(p.id) %}
+          <tr>
+            <td>{{ p.name }} <small class="text-muted">({{ p.role }})</small></td>
+            <td>{{ p.team.short_name }}</td>
+            <td><input type="number" name="runs_{{ p.id }}" class="form-control form-control-sm" min="0" value="{{ perf.runs if perf else 0 }}" style="width:80px"></td>
+            <td><input type="number" name="balls_{{ p.id }}" class="form-control form-control-sm" min="0" value="{{ perf.balls if perf else 0 }}" style="width:80px"></td>
+            <td><input type="number" name="wickets_{{ p.id }}" class="form-control form-control-sm" min="0" max="10" value="{{ perf.wickets if perf else 0 }}" style="width:80px"></td>
+            <td><input type="number" name="conceded_{{ p.id }}" class="form-control form-control-sm" min="0" value="{{ perf.runs_conceded if perf else 0 }}" style="width:80px"></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <button class="btn btn-success">Save Performances</button>
+      <a href="{{ url_for('admin.matches') }}" class="btn btn-outline-secondary">Back</a>
+    </form>
+    {% else %}
+    <p class="text-muted text-center my-4">
+      Neither team has any players yet — run the auction first so squads exist.
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

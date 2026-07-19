@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Home Page Settings{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header fw-bold">🎨 Home Page Settings</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Site Name</label>
+            <input name="site_name" class="form-control" value="{{ site_name }}" maxlength="40" required>
+            <div class="form-text">Shown in the navbar, browser tab and the big home page title.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tournament Quote / Tagline</label>
+            <input name="site_quote" class="form-control" value="{{ site_quote }}" maxlength="120">
+            <div class="form-text">The line under the big title on the home page.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Season Year</label>
+            <input name="site_year" class="form-control" value="{{ site_year }}" maxlength="10">
+            <div class="form-text">Shown as "SEASON {{ site_year }}" above the title.</div>
+          </div>
+          <button class="btn btn-success">Save Settings</button>
+          <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">Back</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
