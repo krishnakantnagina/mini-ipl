@@ -8,7 +8,7 @@
       <div class="card-header fw-bold">Put a player up</div>
       <div class="card-body">
         {% if available or unsold %}
-        <label class="form-label">Registered players</label>
+        <label class="form-label">Waiting for auction</label>
         <select id="player-select" class="form-select mb-2">
           {% for p in available %}
           <option value="{{ p.id }}">{{ p.name }} — {{ p.role }} (base {{ p.base_price }} L)</option>
