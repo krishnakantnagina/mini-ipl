@@ -1,6 +1,27 @@
+import re
+
 from app import db
 
-ROLES = ["Batsman", "Bowler", "All-rounder", "Wicketkeeper"]
+SKILLS = ["Batsman", "Bowler", "Both"]
+
+
+def slugify(name):
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    return slug or "player"
+
+
+def unique_slug(name, current_id=None):
+    """A URL slug from the player's name, made unique with -2, -3... if needed."""
+    base = slugify(name)
+    slug, n = base, 2
+    while True:
+        q = PlayerProfile.query.filter_by(slug=slug)
+        if current_id is not None:
+            q = q.filter(PlayerProfile.id != current_id)
+        if q.first() is None:
+            return slug
+        slug = f"{base}-{n}"
+        n += 1
 
 
 class Setting(db.Model):
@@ -22,21 +43,21 @@ def set_setting(key, value):
     db.session.commit()
 
 
-def registration_open():
-    return get_setting("registration_open", "1") == "1"
-
-
-def set_registration_open(is_open):
-    set_setting("registration_open", "1" if is_open else "0")
-
-
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
     short_name = db.Column(db.String(8), nullable=False)
     owner_name = db.Column(db.String(80), nullable=False)
 
-    players = db.relationship("Player", backref="team", lazy=True)
+    players = db.relationship("PlayerProfile", backref="team", lazy=True)
+
+    @property
+    def captain(self):
+        return next((p for p in self.players if p.is_captain), None)
+
+    @property
+    def vice_captain(self):
+        return next((p for p in self.players if p.is_vice_captain), None)
 
 
 class Owner(db.Model):
@@ -48,14 +69,25 @@ class Owner(db.Model):
     team = db.relationship("Team", backref=db.backref("owner_account", uselist=False))
 
 
-class Player(db.Model):
+class PlayerProfile(db.Model):
+    __tablename__ = "player_profile"
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
-    age = db.Column(db.Integer)
-    role = db.Column(db.String(20), nullable=False)
-    team_id = db.Column(db.Integer, db.ForeignKey("team.id"))  # None = free agent
+    slug = db.Column(db.String(100), unique=True, nullable=False)  # /players/<slug>
+    mobile = db.Column(db.String(20))
+    photo = db.Column(db.String(150))  # path under static/, e.g. uploads/players/x.jpg
+    skill = db.Column(db.String(20), nullable=False, default="Batsman")  # SKILLS
+    is_captain = db.Column(db.Boolean, nullable=False, default=False)
+    is_vice_captain = db.Column(db.Boolean, nullable=False, default=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("team.id"))
 
     performances = db.relationship("Performance", backref="player", lazy=True)
+
+    @property
+    def initials(self):
+        parts = self.name.split()
+        return (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper()
 
 
 MATCH_STAGES = ["league", "qualifier1", "eliminator", "qualifier2", "final"]
@@ -94,7 +126,7 @@ class Match(db.Model):
 class Performance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     match_id = db.Column(db.Integer, db.ForeignKey("match.id"), nullable=False)
-    player_id = db.Column(db.Integer, db.ForeignKey("player.id"), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey("player_profile.id"), nullable=False)
     runs = db.Column(db.Integer, default=0)
     balls = db.Column(db.Integer, default=0)
     wickets = db.Column(db.Integer, default=0)

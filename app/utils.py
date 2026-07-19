@@ -1,6 +1,37 @@
+import os
+import secrets
 from functools import wraps
 
-from flask import session, redirect, url_for, flash
+from flask import session, redirect, url_for, flash, current_app
+from werkzeug.utils import secure_filename
+
+PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+def save_photo(file, slug):
+    """Save an uploaded player photo under static/uploads/players.
+
+    Returns the path relative to static/ (for url_for('static', ...)),
+    or None if nothing valid was uploaded.
+    """
+    if not file or not file.filename:
+        return None
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    if ext not in PHOTO_EXTENSIONS:
+        return None
+    folder = os.path.join(current_app.static_folder, "uploads", "players")
+    os.makedirs(folder, exist_ok=True)
+    filename = f"{slug}-{secrets.token_hex(4)}{ext}"
+    file.save(os.path.join(folder, filename))
+    return f"uploads/players/{filename}"
+
+
+def delete_photo(photo):
+    if not photo:
+        return
+    path = os.path.join(current_app.static_folder, *photo.split("/"))
+    if os.path.isfile(path):
+        os.remove(path)
 
 
 def admin_required(view):

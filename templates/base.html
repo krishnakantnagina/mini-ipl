@@ -29,12 +29,6 @@
              href="{{ url_for(endpoint) }}">{{ label }}</a>
         </li>
         {% endfor %}
-        {% if registration_on %}
-        <li class="nav-item">
-          <a class="nav-link {% if request.endpoint == 'public.register' %}active{% endif %}"
-             href="{{ url_for('public.register') }}">Register</a>
-        </li>
-        {% endif %}
       </ul>
       <ul class="navbar-nav">
         {% if session.get('owner_id') %}

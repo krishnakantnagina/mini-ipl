@@ -3,27 +3,6 @@
 {% block content %}
 <h3 class="mb-3">Admin Dashboard</h3>
 
-<div class="card mb-4">
-  <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-      <span class="fw-bold">Player Registration:</span>
-      {% if registration_on %}
-      <span class="badge bg-success fs-6">OPEN</span>
-      <small class="text-muted ms-2">New players can sign up at /register</small>
-      {% else %}
-      <span class="badge bg-danger fs-6">CLOSED</span>
-      <small class="text-muted ms-2">Register button is hidden everywhere</small>
-      {% endif %}
-    </div>
-    <form method="post" action="{{ url_for('admin.toggle_registration') }}">
-      {% if registration_on %}
-      <button class="btn btn-outline-danger">⏻ Turn OFF registration</button>
-      {% else %}
-      <button class="btn btn-success">⏻ Turn ON registration</button>
-      {% endif %}
-    </form>
-  </div>
-</div>
 <div class="row g-3 mb-4">
   <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.players }}</h2><span class="text-muted">Players</span></div></div>
   <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.free }}</h2><span class="text-muted">Free agents</span></div></div>

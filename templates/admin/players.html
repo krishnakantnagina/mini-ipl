@@ -10,10 +10,10 @@
   <div class="card card-body">
     <form method="post" class="row g-2">
       <div class="col-md-3"><input name="name" class="form-control" placeholder="Name" required></div>
-      <div class="col-md-2"><input name="age" type="number" class="form-control" placeholder="Age" min="14"></div>
-      <div class="col-md-3">
-        <select name="role" class="form-select">
-          {% for r in roles %}<option>{{ r }}</option>{% endfor %}
+      <div class="col-md-3"><input name="mobile" class="form-control" placeholder="Mobile number"></div>
+      <div class="col-md-2">
+        <select name="skill" class="form-select">
+          {% for s in skills %}<option>{{ s }}</option>{% endfor %}
         </select>
       </div>
       <div class="col-md-2">
@@ -24,22 +24,36 @@
       </div>
       <div class="col-md-2"><button class="btn btn-success w-100">Add</button></div>
     </form>
+    <small class="text-muted mt-1">Owners can also add players (with photos) from their own dashboard.</small>
   </div>
 </div>
 
 {% if players %}
 <div class="card">
-  <table class="table table-hover mb-0">
-    <thead><tr><th>Name</th><th>Age</th><th>Role</th><th>Team</th><th style="width:220px">Actions</th></tr></thead>
+  <table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Name</th><th>Mobile</th><th>Skill</th><th>Team</th><th style="width:220px">Actions</th></tr></thead>
     <tbody>
       {% for p in players %}
       <tr>
         <form method="post" action="{{ url_for('admin.edit_player', player_id=p.id) }}">
-        <td><input name="name" class="form-control form-control-sm" value="{{ p.name }}"></td>
-        <td><input name="age" type="number" class="form-control form-control-sm" value="{{ p.age or '' }}" style="width:70px"></td>
         <td>
-          <select name="role" class="form-select form-select-sm">
-            {% for r in roles %}<option {% if p.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+          <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('public.player_profile', slug=p.slug) }}" title="View profile">
+              {% if p.photo %}
+              <img src="{{ url_for('static', filename=p.photo) }}" alt="" class="avatar-sm">
+              {% else %}
+              <span class="avatar-sm avatar-sm-initials" style="background:{{ team_color(p.team) if p.team else '#4a5568' }}">{{ p.initials }}</span>
+              {% endif %}
+            </a>
+            <input name="name" class="form-control form-control-sm" value="{{ p.name }}">
+            {% if p.is_captain %}<span class="cvc-badge cvc-badge-sm">C</span>{% endif %}
+            {% if p.is_vice_captain %}<span class="cvc-badge cvc-badge-sm cvc-vice">VC</span>{% endif %}
+          </div>
+        </td>
+        <td><input name="mobile" class="form-control form-control-sm" value="{{ p.mobile or '' }}" style="width:130px"></td>
+        <td>
+          <select name="skill" class="form-select form-select-sm">
+            {% for s in skills %}<option {% if p.skill == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
           </select>
         </td>
         <td>
@@ -64,6 +78,6 @@
   </table>
 </div>
 {% else %}
-<p class="text-muted text-center my-5">No players yet. Add one above or share the <a href="{{ url_for('public.register') }}">registration page</a>.</p>
+<p class="text-muted text-center my-5">No players yet. Add one above, or let team owners build their squads.</p>
 {% endif %}
 {% endblock %}

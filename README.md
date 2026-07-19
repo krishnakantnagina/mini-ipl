@@ -1,9 +1,10 @@
 # Mini IPL Management System
 
-A Flask web app for running a mini IPL-style tournament: players register and
-join a team directly, match scheduling, result entry, a points table with NRR,
-player stats (Orange/Purple Cap), and real-IPL-style playoffs (Qualifier 1,
-Eliminator, Qualifier 2, Final).
+A Flask web app for running a mini IPL-style tournament: team owners build
+their squads with rich player profiles (photo, mobile, skill, captain and
+vice-captain tags, name-based profile URLs), match scheduling, result entry,
+a points table with NRR, player stats (Orange/Purple Cap), and real-IPL-style
+playoffs (Qualifier 1, Eliminator, Qualifier 2, Final).
 
 ## Run locally
 
@@ -19,8 +20,12 @@ Open http://127.0.0.1:5000 — other devices on the same WiFi can use
 - Admin login: `admin` / `admin123` (change via `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars)
 - Owner logins are created by the admin under **Admin → Owners**
   (seed data uses the team short name in lowercase / `owner123`)
-- Players pick a team on the registration form, or register as free agents
-  that the admin places from **Admin → Manage Players**
+- Owners add players to their team from the owner dashboard: name, mobile,
+  photo, skill (Batsman/Bowler/Both) and captain/vice-captain tags. Each
+  player gets a profile page at `/players/<name-slug>`. Mobile numbers are
+  shown only to the admin and that player's own team owner.
+- Photo uploads land in `static/uploads/players/` (not tracked by git; on
+  free cloud tiers they are lost on redeploy)
 
 ## Deploy (Render / Railway)
 

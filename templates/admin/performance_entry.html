@@ -17,7 +17,7 @@
           {% for p in squad %}
           {% set perf = existing.get(p.id) %}
           <tr>
-            <td>{{ p.name }} <small class="text-muted">({{ p.role }})</small></td>
+            <td>{{ p.name }} <small class="text-muted">({{ p.skill }})</small></td>
             <td>{{ p.team.short_name }}</td>
             <td><input type="number" name="runs_{{ p.id }}" class="form-control form-control-sm" min="0" value="{{ perf.runs if perf else 0 }}" style="width:80px"></td>
             <td><input type="number" name="balls_{{ p.id }}" class="form-control form-control-sm" min="0" value="{{ perf.balls if perf else 0 }}" style="width:80px"></td>

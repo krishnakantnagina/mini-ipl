@@ -3,3 +3,4 @@ __pycache__/
 ipl.db
 instance/
 .env
+static/uploads/

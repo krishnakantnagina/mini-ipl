@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ player.name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header fw-bold">✏️ Edit Player Profile</div>
+      <div class="card-body">
+        <div class="text-center mb-3">
+          {% if player.photo %}
+          <img src="{{ url_for('static', filename=player.photo) }}" alt="{{ player.name }}"
+               class="profile-avatar" style="border-color:{{ team_color(player.team) }}">
+          {% else %}
+          <span class="profile-avatar profile-avatar-initials" style="background:{{ team_color(player.team) }}">{{ player.initials }}</span>
+          {% endif %}
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input name="name" class="form-control" value="{{ player.name }}" required maxlength="80">
+            <div class="form-text">Changing the name also changes the profile URL.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mobile number</label>
+            <input name="mobile" class="form-control" value="{{ player.mobile or '' }}" maxlength="20">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Skill</label>
+            <select name="skill" class="form-select">
+              {% for s in skills %}<option {% if player.skill == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Photo</label>
+            <input name="photo" type="file" class="form-control" accept="image/*">
+            <div class="form-text">Leave empty to keep the current photo.</div>
+          </div>
+          <button class="btn btn-success">Save</button>
+          <a href="{{ url_for('owner.dashboard') }}" class="btn btn-outline-secondary">Back</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

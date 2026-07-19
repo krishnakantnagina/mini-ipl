@@ -1,11 +1,11 @@
 from datetime import date
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, session
 from sqlalchemy import func
 
 from app import db
-from app.models import (Player, Team, Match, Performance, ROLES, STAGE_LABELS,
-                        registration_open, get_setting)
+from app.models import (PlayerProfile, Team, Match, Performance, SKILLS,
+                        STAGE_LABELS, get_setting)
 from app.utils import compute_points_table
 
 public_bp = Blueprint("public", __name__)
@@ -18,10 +18,9 @@ TEAM_PALETTE = ['#1d4e89', '#c8102e', '#7b2d8b', '#e6a817', '#0f7b6c', '#d35400'
 def inject_helpers():
     return {
         "team_color": lambda team: TEAM_PALETTE[team.id % len(TEAM_PALETTE)],
-        "registration_on": registration_open(),
         "stage_labels": STAGE_LABELS,
         "site_name": get_setting("site_name", "Mini IPL"),
-        "site_quote": get_setting("site_quote", "Players register. Teams battle. One cup."),
+        "site_quote": get_setting("site_quote", "Teams sign players. Rivals battle. One cup."),
         "site_year": get_setting("site_year", "2026"),
     }
 
@@ -36,9 +35,9 @@ def index():
     )
     table = compute_points_table()[:4]
     top_scorers = (
-        db.session.query(Player, func.sum(Performance.runs).label("total_runs"))
+        db.session.query(PlayerProfile, func.sum(Performance.runs).label("total_runs"))
         .join(Performance)
-        .group_by(Player.id)
+        .group_by(PlayerProfile.id)
         .order_by(func.sum(Performance.runs).desc())
         .limit(3)
         .all()
@@ -51,8 +50,8 @@ def index():
     )
     counts = {
         "teams": Team.query.count(),
-        "players": Player.query.count(),
-        "signed": Player.query.filter(Player.team_id.isnot(None)).count(),
+        "players": PlayerProfile.query.count(),
+        "signed": PlayerProfile.query.filter(PlayerProfile.team_id.isnot(None)).count(),
         "completed": Match.query.filter_by(status="completed").count(),
     }
     final = Match.query.filter_by(stage="final", status="completed").first()
@@ -64,66 +63,49 @@ def index():
     )
 
 
-@public_bp.route("/register", methods=["GET", "POST"])
-def register():
-    if not registration_open():
-        if request.method == "POST":
-            flash("Sorry, player registration is currently closed.", "danger")
-        return render_template("public/register.html", roles=ROLES, teams=[], closed=True)
-
-    max_squad = current_app.config["MAX_SQUAD_SIZE"]
-    all_teams = Team.query.order_by(Team.name).all()
-
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        role = request.form.get("role", "")
-        try:
-            age = int(request.form.get("age", 0))
-        except ValueError:
-            age = 0
-        try:
-            team_id = int(request.form.get("team_id") or 0)
-        except ValueError:
-            team_id = 0
-        team = Team.query.get(team_id) if team_id else None
-
-        if not name or role not in ROLES or age < 14:
-            flash("Please fill all fields correctly (age 14+).", "danger")
-        elif team_id and not team:
-            flash("Pick a valid team.", "danger")
-        elif team and len(team.players) >= max_squad:
-            flash(f"{team.name} already has a full squad of {max_squad}. Pick another team.", "danger")
-        else:
-            db.session.add(Player(name=name, age=age, role=role,
-                                  team_id=team.id if team else None))
-            db.session.commit()
-            if team:
-                flash(f"Welcome {name}! You have joined {team.name}.", "success")
-            else:
-                flash(f"Welcome {name}! You are registered as a free agent - "
-                      f"the admin can place you in a team.", "success")
-            return redirect(url_for("public.players"))
-    return render_template("public/register.html", roles=ROLES, teams=all_teams,
-                           max_squad=max_squad)
-
-
 @public_bp.route("/players")
 def players():
-    role = request.args.get("role", "")
+    skill = request.args.get("skill", "")
     team_arg = request.args.get("team", "")
-    q = Player.query
-    if role:
-        q = q.filter_by(role=role)
+    q = PlayerProfile.query
+    if skill:
+        q = q.filter_by(skill=skill)
     if team_arg == "free":
-        q = q.filter(Player.team_id.is_(None))
+        q = q.filter(PlayerProfile.team_id.is_(None))
     elif team_arg.isdigit():
         q = q.filter_by(team_id=int(team_arg))
-    all_players = q.order_by(Player.name).all()
+    all_players = q.order_by(PlayerProfile.name).all()
     return render_template(
-        "public/players.html", players=all_players, roles=ROLES,
+        "public/players.html", players=all_players, skills=SKILLS,
         teams=Team.query.order_by(Team.name).all(),
-        sel_role=role, sel_team=team_arg,
+        sel_skill=skill, sel_team=team_arg,
     )
+
+
+@public_bp.route("/players/<slug>")
+def player_profile(slug):
+    player = PlayerProfile.query.filter_by(slug=slug).first_or_404()
+    totals = (
+        db.session.query(
+            func.count(Performance.id),
+            func.sum(Performance.runs),
+            func.sum(Performance.wickets),
+        )
+        .filter(Performance.player_id == player.id)
+        .first()
+    )
+    stats = {"matches": totals[0] or 0, "runs": totals[1] or 0, "wickets": totals[2] or 0}
+    recent = (
+        Performance.query.filter_by(player_id=player.id)
+        .join(Match).order_by(Match.date.desc()).limit(5).all()
+    )
+    # mobile number stays private: only the admin and the player's own owner see it
+    can_see_mobile = bool(
+        session.get("is_admin")
+        or (player.team_id and session.get("owner_team_id") == player.team_id)
+    )
+    return render_template("public/player_profile.html", player=player,
+                           stats=stats, recent=recent, can_see_mobile=can_see_mobile)
 
 
 @public_bp.route("/teams")
@@ -176,27 +158,27 @@ def points():
 def stats():
     orange = (
         db.session.query(
-            Player,
+            PlayerProfile,
             func.sum(Performance.runs).label("runs"),
             func.sum(Performance.balls).label("balls"),
             func.count(Performance.id).label("matches"),
         )
         .join(Performance)
-        .group_by(Player.id)
+        .group_by(PlayerProfile.id)
         .order_by(func.sum(Performance.runs).desc())
         .limit(10)
         .all()
     )
     purple = (
         db.session.query(
-            Player,
+            PlayerProfile,
             func.sum(Performance.wickets).label("wickets"),
             func.sum(Performance.runs_conceded).label("conceded"),
             func.count(Performance.id).label("matches"),
         )
         .join(Performance)
         .filter(Performance.wickets > 0)
-        .group_by(Player.id)
+        .group_by(PlayerProfile.id)
         .order_by(func.sum(Performance.wickets).desc(), func.sum(Performance.runs_conceded))
         .limit(10)
         .all()

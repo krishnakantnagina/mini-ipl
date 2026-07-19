@@ -8,7 +8,7 @@ from datetime import date, timedelta
 from werkzeug.security import generate_password_hash
 
 from app import create_app, db
-from app.models import Player, Team, Match, Performance, Owner
+from app.models import PlayerProfile, Team, Match, Performance, Owner, slugify
 
 random.seed(42)
 
@@ -30,7 +30,7 @@ FIRST = ["Arjun", "Rahul", "Vikram", "Suresh", "Ramesh", "Karan", "Aditya", "Man
          "Umesh", "Vijay", "Akash", "Bharat", "Chirag", "Dhruv", "Eshan", "Farhan"]
 LAST = ["Sharma", "Patel", "Singh", "Kumar", "Verma", "Reddy", "Nair", "Iyer",
         "Chopra", "Malhotra", "Gupta", "Joshi", "Desai", "Mehta", "Rao", "Menon"]
-ROLES = ["Batsman", "Batsman", "Bowler", "Bowler", "All-rounder", "Wicketkeeper"]
+SKILLS = ["Batsman", "Batsman", "Bowler", "Bowler", "Both"]
 
 
 def main():
@@ -62,10 +62,11 @@ def main():
             if name in used_names:
                 continue
             used_names.add(name)
-            p = Player(
+            p = PlayerProfile(
                 name=name,
-                age=random.randint(18, 36),
-                role=random.choice(ROLES),
+                slug=slugify(name),
+                mobile=f"9{random.randint(100000000, 999999999)}",
+                skill=random.choice(SKILLS),
             )
             db.session.add(p)
             players.append(p)
@@ -74,6 +75,14 @@ def main():
         for i, p in enumerate(players[:32]):
             p.team_id = teams[i % len(teams)].id
         # rest stay free agents so the admin has someone to place
+
+        # first two signings of every team get the captain / vice-captain tags
+        for t in teams:
+            squad = [p for p in players[:32] if p.team_id == t.id]
+            if squad:
+                squad[0].is_captain = True
+            if len(squad) > 1:
+                squad[1].is_vice_captain = True
 
         # fixtures: everyone plays everyone once; first 6 matches completed
         from itertools import combinations
@@ -105,7 +114,8 @@ def main():
             m.status = "completed"
 
             # performances for a few players from each side
-            squad = Player.query.filter(Player.team_id.in_([m.team1_id, m.team2_id])).all()
+            squad = PlayerProfile.query.filter(
+                PlayerProfile.team_id.in_([m.team1_id, m.team2_id])).all()
             for p in random.sample(squad, min(6, len(squad))):
                 runs = random.randint(0, 78)
                 db.session.add(Performance(
@@ -119,7 +129,7 @@ def main():
 
         print("Database seeded!")
         print(f"  Teams   : {Team.query.count()}")
-        print(f"  Players : {Player.query.count()} (8 free agents)")
+        print(f"  Players : {PlayerProfile.query.count()} (8 free agents)")
         print(f"  Matches : {Match.query.count()} (6 completed)")
         print("\nOwner logins (at /owner/login, password for all: owner123):")
         for t in Team.query.order_by(Team.name):

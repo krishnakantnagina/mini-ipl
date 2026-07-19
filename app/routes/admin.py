@@ -6,10 +6,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.security import generate_password_hash
 
 from app import db
-from app.models import (Player, Team, Match, Performance, Owner, ROLES,
-                        STAGE_LABELS, registration_open,
-                        set_registration_open, get_setting, set_setting)
-from app.utils import admin_required, compute_points_table
+from app.models import (PlayerProfile, Team, Match, Performance, Owner, SKILLS,
+                        STAGE_LABELS, get_setting, set_setting, unique_slug)
+from app.utils import admin_required, compute_points_table, delete_photo
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -43,27 +42,14 @@ def logout():
 @admin_required
 def dashboard():
     counts = {
-        "players": Player.query.count(),
-        "free": Player.query.filter(Player.team_id.is_(None)).count(),
-        "signed": Player.query.filter(Player.team_id.isnot(None)).count(),
+        "players": PlayerProfile.query.count(),
+        "free": PlayerProfile.query.filter(PlayerProfile.team_id.is_(None)).count(),
+        "signed": PlayerProfile.query.filter(PlayerProfile.team_id.isnot(None)).count(),
         "teams": Team.query.count(),
         "matches": Match.query.count(),
         "completed": Match.query.filter_by(status="completed").count(),
     }
-    return render_template("admin/dashboard.html", counts=counts,
-                           registration_on=registration_open())
-
-
-@admin_bp.route("/toggle-registration", methods=["POST"])
-@admin_required
-def toggle_registration():
-    now_open = not registration_open()
-    set_registration_open(now_open)
-    if now_open:
-        flash("Player registration is now OPEN.", "success")
-    else:
-        flash("Player registration is now CLOSED.", "warning")
-    return redirect(url_for("admin.dashboard"))
+    return render_template("admin/dashboard.html", counts=counts)
 
 
 @admin_bp.route("/site", methods=["GET", "POST"])
@@ -102,38 +88,37 @@ def _team_from_form():
 def players():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        role = request.form.get("role", "")
-        try:
-            age = int(request.form.get("age", 0))
-        except ValueError:
-            age = 0
+        skill = request.form.get("skill", "")
+        mobile = request.form.get("mobile", "").strip()
         team, team_ok = _team_from_form()
-        if not name or role not in ROLES:
-            flash("Name and a valid role are required.", "danger")
+        if not name or skill not in SKILLS:
+            flash("Name and a valid skill are required.", "danger")
         else:
-            db.session.add(Player(name=name, age=age, role=role,
-                                  team_id=team.id if team else None))
+            db.session.add(PlayerProfile(name=name, slug=unique_slug(name),
+                                         mobile=mobile, skill=skill,
+                                         team_id=team.id if team else None))
             db.session.commit()
             flash(f"Player {name} added.", "success")
         return redirect(url_for("admin.players"))
 
-    all_players = Player.query.order_by(Player.team_id.is_(None).desc(), Player.name).all()
-    return render_template("admin/players.html", players=all_players, roles=ROLES,
+    all_players = PlayerProfile.query.order_by(
+        PlayerProfile.team_id.is_(None).desc(), PlayerProfile.name).all()
+    return render_template("admin/players.html", players=all_players, skills=SKILLS,
                            teams=Team.query.order_by(Team.name).all())
 
 
 @admin_bp.route("/players/<int:player_id>/edit", methods=["POST"])
 @admin_required
 def edit_player(player_id):
-    p = Player.query.get_or_404(player_id)
-    p.name = request.form.get("name", p.name).strip() or p.name
-    role = request.form.get("role", p.role)
-    if role in ROLES:
-        p.role = role
-    try:
-        p.age = int(request.form.get("age", p.age or 0))
-    except ValueError:
-        pass
+    p = PlayerProfile.query.get_or_404(player_id)
+    name = request.form.get("name", p.name).strip() or p.name
+    if name != p.name:
+        p.slug = unique_slug(name, current_id=p.id)
+    p.name = name
+    skill = request.form.get("skill", p.skill)
+    if skill in SKILLS:
+        p.skill = skill
+    p.mobile = request.form.get("mobile", p.mobile or "").strip()
     team, team_ok = _team_from_form()
     if team_ok:
         new_team_id = team.id if team else None
@@ -141,6 +126,8 @@ def edit_player(player_id):
                 and len(team.players) >= current_app.config["MAX_SQUAD_SIZE"]:
             flash(f"{team.name} already has a full squad.", "danger")
             return redirect(url_for("admin.players"))
+        if new_team_id != p.team_id:
+            p.is_captain = p.is_vice_captain = False  # tags belong to the old team
         p.team_id = new_team_id
     db.session.commit()
     flash(f"Player {p.name} updated.", "success")
@@ -150,8 +137,9 @@ def edit_player(player_id):
 @admin_bp.route("/players/<int:player_id>/delete", methods=["POST"])
 @admin_required
 def delete_player(player_id):
-    p = Player.query.get_or_404(player_id)
+    p = PlayerProfile.query.get_or_404(player_id)
     Performance.query.filter_by(player_id=p.id).delete()
+    delete_photo(p.photo)
     db.session.delete(p)
     db.session.commit()
     flash(f"Player {p.name} deleted.", "info")
@@ -429,9 +417,9 @@ def result(match_id):
 @admin_required
 def performances(match_id):
     m = Match.query.get_or_404(match_id)
-    squad = Player.query.filter(
-        Player.team_id.in_([m.team1_id, m.team2_id])
-    ).order_by(Player.team_id, Player.name).all()
+    squad = PlayerProfile.query.filter(
+        PlayerProfile.team_id.in_([m.team1_id, m.team2_id])
+    ).order_by(PlayerProfile.team_id, PlayerProfile.name).all()
 
     if request.method == "POST":
         Performance.query.filter_by(match_id=m.id).delete()

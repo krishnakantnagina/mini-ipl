@@ -4,10 +4,10 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3 class="mb-0">Players</h3>
   <form class="d-flex gap-2">
-    <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
-      <option value="">All roles</option>
-      {% for r in roles %}
-      <option value="{{ r }}" {% if sel_role == r %}selected{% endif %}>{{ r }}</option>
+    <select name="skill" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">All skills</option>
+      {% for s in skills %}
+      <option value="{{ s }}" {% if sel_skill == s %}selected{% endif %}>{{ s }}</option>
       {% endfor %}
     </select>
     <select name="team" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -22,16 +22,26 @@
 
 {% if players %}
 <div class="card">
-  <table class="table table-hover mb-0">
-    <thead>
-      <tr><th>Name</th><th>Age</th><th>Role</th><th>Team</th></tr>
+  <table class="table table-hover align-middle mb-0">
+    <thead class="squad-head">
+      <tr><th>Player</th><th>Skill</th><th>Team</th></tr>
     </thead>
     <tbody>
       {% for p in players %}
       <tr>
-        <td>{{ p.name }}</td>
-        <td>{{ p.age or '-' }}</td>
-        <td>{{ p.role }}</td>
+        <td>
+          <a href="{{ url_for('public.player_profile', slug=p.slug) }}" class="text-decoration-none text-body d-flex align-items-center gap-2">
+            {% if p.photo %}
+            <img src="{{ url_for('static', filename=p.photo) }}" alt="" class="avatar-sm">
+            {% else %}
+            <span class="avatar-sm avatar-sm-initials" style="background:{{ team_color(p.team) if p.team else '#4a5568' }}">{{ p.initials }}</span>
+            {% endif %}
+            <span class="fw-semibold">{{ p.name }}</span>
+            {% if p.is_captain %}<span class="cvc-badge cvc-badge-sm">C</span>{% endif %}
+            {% if p.is_vice_captain %}<span class="cvc-badge cvc-badge-sm cvc-vice">VC</span>{% endif %}
+          </a>
+        </td>
+        <td><span class="role-badge role-{{ p.skill | lower }}">{{ p.skill }}</span></td>
         <td>
           {% if p.team %}
           <a href="{{ url_for('public.team_detail', team_id=p.team.id) }}" class="team-link">
@@ -46,6 +56,6 @@
   </table>
 </div>
 {% else %}
-<p class="text-muted text-center my-5">No players found. <a href="{{ url_for('public.register') }}">Register now!</a></p>
+<p class="text-muted text-center my-5">No players yet — team owners add them from their dashboard.</p>
 {% endif %}
 {% endblock %}

@@ -20,3 +20,4 @@ class Config:
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
     MAX_SQUAD_SIZE = 15
+    MAX_CONTENT_LENGTH = 4 * 1024 * 1024  # photo uploads capped at 4 MB
