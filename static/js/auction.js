@@ -5,12 +5,28 @@
 
   const el = (id) => document.getElementById(id);
 
-  function showError(message) {
-    const box = el("bid-error");
+  function flash(boxId, message) {
+    const box = el(boxId);
     if (!box) return alert(message);
     box.textContent = message;
     box.style.display = "block";
     setTimeout(() => (box.style.display = "none"), 3000);
+  }
+  const showError = (message) => flash("bid-error", message);
+  const showInfo = (message) => flash("bid-info", message);
+
+  function setConnected(ok) {
+    const badge = el("conn-status");
+    if (!badge) return;
+    badge.textContent = ok ? "🟢 Connected" : "🔴 Disconnected";
+    badge.className = "badge " + (ok ? "bg-success" : "bg-danger");
+  }
+
+  // Buttons silently do nothing when the socket is down, so tell the user.
+  function requireConnection() {
+    if (socket.connected) return true;
+    showError("Not connected to the server - check your internet and refresh the page.");
+    return false;
   }
 
   function renderState(state) {
@@ -48,8 +64,13 @@
     });
   }
 
+  socket.on("connect", () => setConnected(true));
+  socket.on("disconnect", () => setConnected(false));
+  socket.on("connect_error", () => setConnected(false));
+
   socket.on("state_update", renderState);
   socket.on("auction_error", (data) => showError(data.message));
+  socket.on("auction_info", (data) => showInfo(data.message));
   socket.on("player_done", () => {
     // Reload so purses, squads and feeds refresh from the database.
     setTimeout(() => window.location.reload(), 1200);
@@ -58,7 +79,9 @@
   // Owner console
   const bidButton = el("bid-button");
   if (bidButton) {
-    bidButton.addEventListener("click", () => socket.emit("place_bid", {}));
+    bidButton.addEventListener("click", () => {
+      if (requireConnection()) socket.emit("place_bid", {});
+    });
   }
 
   // Admin console
@@ -71,15 +94,19 @@
       if (unsoldSelect && unsoldSelect.value) playerId = unsoldSelect.value;
       else if (mainSelect && mainSelect.value) playerId = mainSelect.value;
       if (!playerId) return showError("Pick a player first.");
-      socket.emit("start_player", { player_id: parseInt(playerId, 10) });
+      if (requireConnection()) socket.emit("start_player", { player_id: parseInt(playerId, 10) });
     });
   }
   const soldButton = el("sold-button");
   if (soldButton) {
-    soldButton.addEventListener("click", () => socket.emit("mark_sold", {}));
+    soldButton.addEventListener("click", () => {
+      if (requireConnection()) socket.emit("mark_sold", {});
+    });
   }
   const unsoldButton = el("unsold-button");
   if (unsoldButton) {
-    unsoldButton.addEventListener("click", () => socket.emit("mark_unsold", {}));
+    unsoldButton.addEventListener("click", () => {
+      if (requireConnection()) socket.emit("mark_unsold", {});
+    });
   }
 })();

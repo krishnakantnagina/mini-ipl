@@ -47,6 +47,7 @@ def _reset_state():
 @socketio.on("start_player")
 def start_player(data):
     if not session.get("is_admin"):
+        emit("auction_error", {"message": "Admin login not detected on this connection - refresh the page and log in as admin again."})
         return
     with _lock:
         player = Player.query.get(data.get("player_id"))
@@ -67,6 +68,7 @@ def start_player(data):
             "history": [f"{player.name} ({player.role}) up for auction at base price {player.base_price} L"],
         })
     emit("state_update", get_state(), broadcast=True)
+    emit("auction_info", {"message": f"Bidding started for {player.name}."})
 
 
 @socketio.on("place_bid")
@@ -113,6 +115,7 @@ def place_bid(data=None):
 @socketio.on("mark_sold")
 def mark_sold(data=None):
     if not session.get("is_admin"):
+        emit("auction_error", {"message": "Admin login not detected on this connection - refresh the page and log in as admin again."})
         return
     with _lock:
         if not _state["active"] or _state["leading_team_id"] is None:
@@ -139,9 +142,11 @@ def mark_sold(data=None):
 @socketio.on("mark_unsold")
 def mark_unsold(data=None):
     if not session.get("is_admin"):
+        emit("auction_error", {"message": "Admin login not detected on this connection - refresh the page and log in as admin again."})
         return
     with _lock:
         if not _state["active"]:
+            emit("auction_error", {"message": "No player is up for auction right now."})
             return
         player = Player.query.get(_state["player_id"])
         player.status = "unsold"
