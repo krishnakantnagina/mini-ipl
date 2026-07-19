@@ -4,11 +4,12 @@ Run:  python seed.py
 """
 import random
 from datetime import date, timedelta
+from itertools import combinations
 
 from werkzeug.security import generate_password_hash
 
 from app import create_app, db
-from app.models import PlayerProfile, Team, Match, Performance, Owner, slugify
+from app.models import PlayerProfile, Team, Match, Owner, slugify
 
 random.seed(42)
 
@@ -18,19 +19,15 @@ TEAMS = [
     ("Bangalore Blasters", "BB", "Garden City Holdings"),
     ("Kolkata Knights", "KK", "Eastern Star Media"),
     ("Delhi Daredevils", "DD", "Capital Ventures"),
-    ("Punjab Panthers", "PP", "North Sports Co"),
-    ("Rajasthan Royals", "RR", "Desert Kings Ltd"),
-    ("Hyderabad Hawks", "HH", "Deccan Group"),
 ]
 
 FIRST = ["Arjun", "Rahul", "Vikram", "Suresh", "Ramesh", "Karan", "Aditya", "Manish",
          "Sanjay", "Deepak", "Nikhil", "Rohan", "Varun", "Ajay", "Pranav", "Kunal",
          "Siddharth", "Harsh", "Yash", "Dev", "Ishan", "Shubham", "Tejas", "Om",
-         "Abhishek", "Gaurav", "Mohit", "Naveen", "Parth", "Ritesh", "Sameer", "Tarun",
-         "Umesh", "Vijay", "Akash", "Bharat", "Chirag", "Dhruv", "Eshan", "Farhan"]
+         "Abhishek", "Gaurav", "Mohit", "Naveen", "Parth", "Ritesh"]
 LAST = ["Sharma", "Patel", "Singh", "Kumar", "Verma", "Reddy", "Nair", "Iyer",
         "Chopra", "Malhotra", "Gupta", "Joshi", "Desai", "Mehta", "Rao", "Menon"]
-SKILLS = ["Batsman", "Batsman", "Bowler", "Bowler", "Both"]
+SKILLS = ["Batsman", "Batsman", "Bowler", "Bowler", "All Rounder"]
 
 
 def main():
@@ -54,10 +51,10 @@ def main():
                 team_id=t.id,
             ))
 
-        # 40 players; the first 32 join a team directly, the rest are free agents
+        # 25 players, 5 per team; every squad gets a captain and a vice-captain
         used_names = set()
         players = []
-        while len(players) < 40:
+        while len(players) < 25:
             name = f"{random.choice(FIRST)} {random.choice(LAST)}"
             if name in used_names:
                 continue
@@ -67,70 +64,34 @@ def main():
                 slug=slugify(name),
                 mobile=f"9{random.randint(100000000, 999999999)}",
                 skill=random.choice(SKILLS),
+                team_id=teams[len(players) % len(teams)].id,
             )
             db.session.add(p)
             players.append(p)
         db.session.flush()
 
-        for i, p in enumerate(players[:32]):
-            p.team_id = teams[i % len(teams)].id
-        # rest stay free agents so the admin has someone to place
-
-        # first two signings of every team get the captain / vice-captain tags
         for t in teams:
-            squad = [p for p in players[:32] if p.team_id == t.id]
-            if squad:
-                squad[0].is_captain = True
-            if len(squad) > 1:
-                squad[1].is_vice_captain = True
+            squad = [p for p in players if p.team_id == t.id]
+            squad[0].is_captain = True
+            squad[1].is_vice_captain = True
 
-        # fixtures: everyone plays everyone once; first 6 matches completed
-        from itertools import combinations
-        start = date.today() - timedelta(days=12)
+        # round-robin schedule: everyone plays everyone once, starting tomorrow
         fixtures = list(combinations(teams, 2))
         random.shuffle(fixtures)
-        matches = []
+        start = date.today() + timedelta(days=1)
         for i, (t1, t2) in enumerate(fixtures):
-            m = Match(
+            db.session.add(Match(
                 team1_id=t1.id, team2_id=t2.id,
                 date=start + timedelta(days=i * 2),
                 venue=f"{t1.short_name} Home Ground",
-            )
-            db.session.add(m)
-            matches.append(m)
-        db.session.flush()
-
-        for m in matches[:6]:
-            s1 = random.randint(130, 210)
-            s2 = random.randint(120, 205)
-            while s2 == s1:
-                s2 = random.randint(120, 205)
-            m.team1_runs, m.team1_wickets, m.team1_overs = s1, random.randint(3, 10), 20.0
-            m.team2_runs, m.team2_wickets, m.team2_overs = s2, random.randint(3, 10), \
-                20.0 if s2 < s1 else round(random.randint(17, 19) + random.randint(0, 5) / 10, 1)
-            m.winner_id = m.team1_id if s1 > s2 else m.team2_id
-            margin = abs(s1 - s2)
-            m.summary = f"Won by {margin} runs" if s1 > s2 else f"Chased down with {margin} to spare"
-            m.status = "completed"
-
-            # performances for a few players from each side
-            squad = PlayerProfile.query.filter(
-                PlayerProfile.team_id.in_([m.team1_id, m.team2_id])).all()
-            for p in random.sample(squad, min(6, len(squad))):
-                runs = random.randint(0, 78)
-                db.session.add(Performance(
-                    match_id=m.id, player_id=p.id,
-                    runs=runs, balls=max(1, int(runs / random.uniform(0.9, 1.8))),
-                    wickets=random.choice([0, 0, 1, 1, 2, 3]),
-                    runs_conceded=random.randint(12, 45),
-                ))
+            ))
 
         db.session.commit()
 
         print("Database seeded!")
         print(f"  Teams   : {Team.query.count()}")
-        print(f"  Players : {PlayerProfile.query.count()} (8 free agents)")
-        print(f"  Matches : {Match.query.count()} (6 completed)")
+        print(f"  Players : {PlayerProfile.query.count()} (5 per team)")
+        print(f"  Matches : {Match.query.count()} scheduled (round robin)")
         print("\nOwner logins (at /owner/login, password for all: owner123):")
         for t in Team.query.order_by(Team.name):
             print(f"  {t.short_name:4} {t.name:22} -> id: {t.short_name.lower()}")

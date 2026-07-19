@@ -1,22 +1,100 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard{% endblock %}
 {% block content %}
-<h3 class="mb-3">Admin Dashboard</h3>
 
-<div class="row g-3 mb-4">
-  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.players }}</h2><span class="text-muted">Players</span></div></div>
-  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.free }}</h2><span class="text-muted">Free agents</span></div></div>
-  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.signed }}</h2><span class="text-muted">In teams</span></div></div>
-  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.teams }}</h2><span class="text-muted">Teams</span></div></div>
-  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.matches }}</h2><span class="text-muted">Matches</span></div></div>
-  <div class="col-md-2 col-6"><div class="card text-center p-3"><h2>{{ counts.completed }}</h2><span class="text-muted">Completed</span></div></div>
+<!-- ======= header ======= -->
+<div class="admin-header mb-4">
+  <div>
+    <span class="hero-kicker">⚙️ CONTROL ROOM</span>
+    <h3 class="text-white mb-1">Admin Dashboard</h3>
+    <span class="text-white-50">Everything about {{ site_name }} is managed from here.</span>
+  </div>
+  <a href="{{ url_for('public.index') }}" class="btn btn-outline-light btn-sm ms-auto">View site →</a>
 </div>
 
-<div class="list-group">
-  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.players') }}">👤 Manage Players</a>
-  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.teams') }}">🏢 Manage Teams</a>
-  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.owners') }}">🔑 Register Owners (ID &amp; password)</a>
-  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.matches') }}">📅 Schedule Matches &amp; Enter Results</a>
-  <a class="list-group-item list-group-item-action" href="{{ url_for('admin.site_settings') }}">🎨 Home Page Settings (site name, quote, year)</a>
+<!-- ======= stats ======= -->
+<div class="row g-3 mb-4">
+  <div class="col-md-2 col-6">
+    <div class="stat-card"><span class="stat-icon" style="background:#e7f0fb">👤</span>
+      <h3>{{ counts.players }}</h3><span>Players</span></div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card"><span class="stat-icon" style="background:#f3f4f6">🧢</span>
+      <h3>{{ counts.free }}</h3><span>Free agents</span></div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card"><span class="stat-icon" style="background:#e6f4ef">✅</span>
+      <h3>{{ counts.signed }}</h3><span>In teams</span></div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card"><span class="stat-icon" style="background:#fdf3dc">🏢</span>
+      <h3>{{ counts.teams }}</h3><span>Teams</span></div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card"><span class="stat-icon" style="background:#fdeaea">📅</span>
+      <h3>{{ counts.matches }}</h3><span>Matches</span></div>
+  </div>
+  <div class="col-md-2 col-6">
+    <div class="stat-card"><span class="stat-icon" style="background:#efe7fb">🏁</span>
+      <h3>{{ counts.completed }}</h3><span>Completed</span></div>
+  </div>
+</div>
+
+<!-- ======= management tiles ======= -->
+<div class="row g-3">
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('admin.players') }}" class="admin-tile">
+      <span class="admin-tile-icon">👤</span>
+      <div>
+        <strong>Manage Players</strong>
+        <small>Add, edit, delete and move players between teams.</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('admin.teams') }}" class="admin-tile">
+      <span class="admin-tile-icon">🏢</span>
+      <div>
+        <strong>Manage Teams</strong>
+        <small>Create teams and edit their names and owners.</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('admin.owners') }}" class="admin-tile">
+      <span class="admin-tile-icon">🔑</span>
+      <div>
+        <strong>Owner Accounts</strong>
+        <small>Give each owner an ID &amp; password to manage their squad.</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('admin.matches') }}" class="admin-tile">
+      <span class="admin-tile-icon">📅</span>
+      <div>
+        <strong>Matches &amp; Results</strong>
+        <small>Schedule fixtures, enter results, generate playoffs.</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('admin.site_settings') }}" class="admin-tile">
+      <span class="admin-tile-icon">🎨</span>
+      <div>
+        <strong>Home Page Settings</strong>
+        <small>Change the site name, tagline and season year.</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4 col-sm-6">
+    <a href="{{ url_for('public.points') }}" class="admin-tile">
+      <span class="admin-tile-icon">🏆</span>
+      <div>
+        <strong>Points Table</strong>
+        <small>See standings update live as you enter results.</small>
+      </div>
+    </a>
+  </div>
 </div>
 {% endblock %}

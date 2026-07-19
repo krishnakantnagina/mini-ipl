@@ -62,7 +62,7 @@
                 {% if p.is_vice_captain %}<span class="cvc-badge cvc-badge-sm cvc-vice">VC</span>{% endif %}
               </a>
             </td>
-            <td><span class="role-badge role-{{ p.skill | lower }}">{{ p.skill }}</span></td>
+            <td><span class="role-badge role-{{ p.skill | lower | replace(' ', '') }}">{{ p.skill }}</span></td>
             <td>
               <div class="d-flex gap-1">
                 <form method="post" action="{{ url_for('owner.set_captain', player_id=p.id) }}">

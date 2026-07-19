@@ -19,7 +19,7 @@
         {% if player.is_vice_captain %}<span class="cvc-badge cvc-vice">VC</span>{% endif %}
       </div>
       <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
-        <span class="role-badge role-{{ player.skill | lower }}">{{ player.skill }}</span>
+        <span class="role-badge role-{{ player.skill | lower | replace(' ', '') }}">{{ player.skill }}</span>
         {% if player.team %}
         <a href="{{ url_for('public.team_detail', team_id=player.team.id) }}" class="team-link text-white text-decoration-none">
           <span class="team-dot team-dot-sm" style="background:{{ accent }}">{{ player.team.short_name }}</span>

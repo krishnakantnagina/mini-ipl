@@ -41,7 +41,7 @@
             {% if p.is_vice_captain %}<span class="cvc-badge cvc-badge-sm cvc-vice">VC</span>{% endif %}
           </a>
         </td>
-        <td><span class="role-badge role-{{ p.skill | lower }}">{{ p.skill }}</span></td>
+        <td><span class="role-badge role-{{ p.skill | lower | replace(' ', '') }}">{{ p.skill }}</span></td>
         <td>
           {% if p.team %}
           <a href="{{ url_for('public.team_detail', team_id=p.team.id) }}" class="team-link">

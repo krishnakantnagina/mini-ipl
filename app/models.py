@@ -2,7 +2,7 @@ import re
 
 from app import db
 
-SKILLS = ["Batsman", "Bowler", "Both"]
+SKILLS = ["Batsman", "Bowler", "All Rounder"]
 
 
 def slugify(name):
