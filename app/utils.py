@@ -14,16 +14,6 @@ def admin_required(view):
     return wrapped
 
 
-def format_money(lakhs):
-    """Show an amount stored in lakhs as a friendly string."""
-    if lakhs is None:
-        return "-"
-    if lakhs >= 100:
-        crores = lakhs / 100
-        return f"₹{crores:g} Cr"
-    return f"₹{lakhs:g} L"
-
-
 def compute_points_table():
     """Points table from completed matches: 2 pts win, 1 pt tie/no-result.
 

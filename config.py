@@ -2,7 +2,6 @@ import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-
 # Cloud hosts (Render/Railway/Heroku) provide a Postgres URL via DATABASE_URL.
 # Without it we fall back to the local SQLite file.
 _db_url = os.environ.get("DATABASE_URL",
@@ -20,7 +19,4 @@ class Config:
     # Default password: admin123  (override with ADMIN_PASSWORD env var)
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
-    # Auction settings (amounts in lakhs: 100 lakh = 1 crore)
-    DEFAULT_PURSE = 10000          # 100 crore per team
-    BID_INCREMENT = 25             # each bid raises price by 25 lakh
     MAX_SQUAD_SIZE = 15

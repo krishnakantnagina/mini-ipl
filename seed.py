@@ -41,7 +41,7 @@ def main():
 
         teams = []
         for name, short, owner in TEAMS:
-            t = Team(name=name, short_name=short, owner_name=owner, purse=10000)
+            t = Team(name=name, short_name=short, owner_name=owner)
             db.session.add(t)
             teams.append(t)
         db.session.flush()
@@ -54,7 +54,7 @@ def main():
                 team_id=t.id,
             ))
 
-        # 40 players; the first 24 already sold in auction, the rest waiting
+        # 40 players; the first 32 join a team directly, the rest are free agents
         used_names = set()
         players = []
         while len(players) < 40:
@@ -66,20 +66,14 @@ def main():
                 name=name,
                 age=random.randint(18, 36),
                 role=random.choice(ROLES),
-                base_price=random.choice([20, 30, 50, 75, 100, 150, 200]),
             )
             db.session.add(p)
             players.append(p)
         db.session.flush()
 
-        for i, p in enumerate(players[:24]):
-            team = teams[i % len(teams)]
-            price = p.base_price + random.choice([0, 25, 50, 100, 200, 400])
-            p.status = "sold"
-            p.team_id = team.id
-            p.sold_price = price
-            team.purse -= price
-        # rest stay "registered" so the live auction has players to sell
+        for i, p in enumerate(players[:32]):
+            p.team_id = teams[i % len(teams)].id
+        # rest stay free agents so the admin has someone to place
 
         # fixtures: everyone plays everyone once; first 6 matches completed
         from itertools import combinations
@@ -125,12 +119,11 @@ def main():
 
         print("Database seeded!")
         print(f"  Teams   : {Team.query.count()}")
-        print(f"  Players : {Player.query.count()} (16 still available for auction)")
+        print(f"  Players : {Player.query.count()} (8 free agents)")
         print(f"  Matches : {Match.query.count()} (6 completed)")
         print("\nOwner logins (at /owner/login, password for all: owner123):")
         for t in Team.query.order_by(Team.name):
-            print(f"  {t.short_name:4} {t.name:22} -> id: {t.short_name.lower():4}  "
-                  f"(access code: {t.access_code})")
+            print(f"  {t.short_name:4} {t.name:22} -> id: {t.short_name.lower()}")
         print("\nAdmin login -> username: admin  password: admin123")
 
 

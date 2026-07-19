@@ -22,21 +22,16 @@
     <span class="hero-kicker">🏏 SEASON {{ site_year }}</span>
     <h1 class="hero-title">{{ site_name }}</h1>
     <p class="hero-sub">{{ site_quote }}</p>
-    {% if registration_on or auction_on %}
+    {% if registration_on %}
     <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
-      {% if registration_on %}
       <a href="{{ url_for('public.register') }}" class="btn btn-success btn-lg px-4">Register as Player</a>
-      {% endif %}
-      {% if auction_on %}
-      <a href="{{ url_for('auction.live_view') }}" class="btn btn-warning btn-lg px-4">🔨 Live Auction</a>
-      {% endif %}
     </div>
     {% endif %}
   </div>
   <div class="hero-stats">
     <div class="hero-stat"><span class="hero-num">{{ counts.teams }}</span><span class="hero-label">Teams</span></div>
     <div class="hero-stat"><span class="hero-num">{{ counts.players }}</span><span class="hero-label">Players</span></div>
-    <div class="hero-stat"><span class="hero-num">{{ counts.sold }}</span><span class="hero-label">Sold in Auction</span></div>
+    <div class="hero-stat"><span class="hero-num">{{ counts.signed }}</span><span class="hero-label">In Teams</span></div>
     <div class="hero-stat"><span class="hero-num">{{ counts.completed }}</span><span class="hero-label">Matches Played</span></div>
   </div>
 </div>

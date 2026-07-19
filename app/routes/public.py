@@ -1,19 +1,14 @@
 from datetime import date
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from sqlalchemy import func
 
 from app import db
 from app.models import (Player, Team, Match, Performance, ROLES, STAGE_LABELS,
-                        registration_open, auction_open, get_setting)
-from app.utils import compute_points_table, format_money
+                        registration_open, get_setting)
+from app.utils import compute_points_table
 
 public_bp = Blueprint("public", __name__)
-
-
-@public_bp.app_template_filter("money")
-def money_filter(lakhs):
-    return format_money(lakhs)
 
 
 TEAM_PALETTE = ['#1d4e89', '#c8102e', '#7b2d8b', '#e6a817', '#0f7b6c', '#d35400', '#2e4057', '#5c821a']
@@ -24,10 +19,9 @@ def inject_helpers():
     return {
         "team_color": lambda team: TEAM_PALETTE[team.id % len(TEAM_PALETTE)],
         "registration_on": registration_open(),
-        "auction_on": auction_open(),
         "stage_labels": STAGE_LABELS,
         "site_name": get_setting("site_name", "Mini IPL"),
-        "site_quote": get_setting("site_quote", "Players register. Owners bid. Teams battle. One cup."),
+        "site_quote": get_setting("site_quote", "Players register. Teams battle. One cup."),
         "site_year": get_setting("site_year", "2026"),
     }
 
@@ -58,7 +52,7 @@ def index():
     counts = {
         "teams": Team.query.count(),
         "players": Player.query.count(),
-        "sold": Player.query.filter_by(status="sold").count(),
+        "signed": Player.query.filter(Player.team_id.isnot(None)).count(),
         "completed": Match.query.filter_by(status="completed").count(),
     }
     final = Match.query.filter_by(stage="final", status="completed").first()
@@ -75,39 +69,60 @@ def register():
     if not registration_open():
         if request.method == "POST":
             flash("Sorry, player registration is currently closed.", "danger")
-        return render_template("public/register.html", roles=ROLES, closed=True)
+        return render_template("public/register.html", roles=ROLES, teams=[], closed=True)
+
+    max_squad = current_app.config["MAX_SQUAD_SIZE"]
+    all_teams = Team.query.order_by(Team.name).all()
+
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         role = request.form.get("role", "")
         try:
             age = int(request.form.get("age", 0))
-            base_price = int(request.form.get("base_price", 20))
         except ValueError:
-            age, base_price = 0, 0
+            age = 0
+        try:
+            team_id = int(request.form.get("team_id") or 0)
+        except ValueError:
+            team_id = 0
+        team = Team.query.get(team_id) if team_id else None
 
-        if not name or role not in ROLES or age < 14 or base_price < 1:
-            flash("Please fill all fields correctly (age 14+, base price at least 1 lakh).", "danger")
+        if not name or role not in ROLES or age < 14:
+            flash("Please fill all fields correctly (age 14+).", "danger")
+        elif team_id and not team:
+            flash("Pick a valid team.", "danger")
+        elif team and len(team.players) >= max_squad:
+            flash(f"{team.name} already has a full squad of {max_squad}. Pick another team.", "danger")
         else:
-            db.session.add(Player(name=name, age=age, role=role, base_price=base_price))
+            db.session.add(Player(name=name, age=age, role=role,
+                                  team_id=team.id if team else None))
             db.session.commit()
-            flash(f"Welcome {name}! You are registered for the auction.", "success")
+            if team:
+                flash(f"Welcome {name}! You have joined {team.name}.", "success")
+            else:
+                flash(f"Welcome {name}! You are registered as a free agent - "
+                      f"the admin can place you in a team.", "success")
             return redirect(url_for("public.players"))
-    return render_template("public/register.html", roles=ROLES)
+    return render_template("public/register.html", roles=ROLES, teams=all_teams,
+                           max_squad=max_squad)
 
 
 @public_bp.route("/players")
 def players():
     role = request.args.get("role", "")
-    status = request.args.get("status", "")
+    team_arg = request.args.get("team", "")
     q = Player.query
     if role:
         q = q.filter_by(role=role)
-    if status:
-        q = q.filter_by(status=status)
+    if team_arg == "free":
+        q = q.filter(Player.team_id.is_(None))
+    elif team_arg.isdigit():
+        q = q.filter_by(team_id=int(team_arg))
     all_players = q.order_by(Player.name).all()
     return render_template(
         "public/players.html", players=all_players, roles=ROLES,
-        sel_role=role, sel_status=status,
+        teams=Team.query.order_by(Team.name).all(),
+        sel_role=role, sel_team=team_arg,
     )
 
 

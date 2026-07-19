@@ -9,20 +9,18 @@
 <div class="collapse mb-4" id="addForm">
   <div class="card card-body">
     <form method="post" class="row g-2">
-      <div class="col-md-3"><input name="name" class="form-control" placeholder="Team name" required></div>
+      <div class="col-md-4"><input name="name" class="form-control" placeholder="Team name" required></div>
       <div class="col-md-2"><input name="short_name" class="form-control" placeholder="Short (e.g. CSK)" maxlength="8" required></div>
-      <div class="col-md-3"><input name="owner_name" class="form-control" placeholder="Owner name" required></div>
-      <div class="col-md-2"><input name="purse" type="number" class="form-control" value="{{ config.DEFAULT_PURSE }}" min="100"></div>
+      <div class="col-md-4"><input name="owner_name" class="form-control" placeholder="Owner name" required></div>
       <div class="col-md-2"><button class="btn btn-success w-100">Create</button></div>
     </form>
-    <small class="text-muted mt-1">Purse is in lakhs (10000 = ₹100 crore).</small>
   </div>
 </div>
 
 {% if teams %}
 <div class="card">
   <table class="table table-hover mb-0">
-    <thead><tr><th>Team</th><th>Short</th><th>Owner</th><th>Purse (L)</th><th>Squad</th><th>Access Code</th><th style="width:230px">Actions</th></tr></thead>
+    <thead><tr><th>Team</th><th>Short</th><th>Owner</th><th>Squad</th><th style="width:120px">Actions</th></tr></thead>
     <tbody>
       {% for t in teams %}
       <tr>
@@ -30,23 +28,15 @@
         <td><input name="name" class="form-control form-control-sm" value="{{ t.name }}"></td>
         <td><input name="short_name" class="form-control form-control-sm" value="{{ t.short_name }}" style="width:80px"></td>
         <td><input name="owner_name" class="form-control form-control-sm" value="{{ t.owner_name }}"></td>
-        <td><input name="purse" type="number" class="form-control form-control-sm" value="{{ t.purse }}" style="width:100px"></td>
         <td>{{ t.players | length }}</td>
-        <td><code class="fs-6">{{ t.access_code }}</code></td>
-        <td class="d-flex gap-1">
+        <td>
           <button class="btn btn-sm btn-primary">Save</button>
         </form>
-          <form method="post" action="{{ url_for('admin.regenerate_code', team_id=t.id) }}">
-            <button class="btn btn-sm btn-outline-secondary">New code</button>
-          </form>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  <div class="card-footer text-muted small">
-    Share each access code privately with that team's owner — they need it to bid in the auction.
-  </div>
 </div>
 {% else %}
 <p class="text-muted text-center my-5">No teams yet. Create the first one above.</p>

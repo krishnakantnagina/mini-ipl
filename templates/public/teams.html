@@ -11,7 +11,6 @@
         <h5 class="card-title">{{ t.name }}</h5>
         <span class="badge bg-primary mb-2">{{ t.short_name }}</span>
         <p class="mb-1 text-muted">Owner: {{ t.owner_name }}</p>
-        <p class="mb-1">Purse left: <strong>{{ t.purse | money }}</strong></p>
         <p class="mb-2">Squad: <strong>{{ t.players | length }}</strong> players</p>
         <a href="{{ url_for('public.team_detail', team_id=t.id) }}" class="btn btn-outline-primary btn-sm">View squad</a>
       </div>

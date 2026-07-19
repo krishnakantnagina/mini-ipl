@@ -6,10 +6,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.security import generate_password_hash
 
 from app import db
-from app.models import (Player, Team, Match, Performance, Owner, ROLES, PLAYER_STATUSES,
-                        STAGE_LABELS, generate_access_code, registration_open,
-                        set_registration_open, auction_open, set_auction_open,
-                        get_setting, set_setting)
+from app.models import (Player, Team, Match, Performance, Owner, ROLES,
+                        STAGE_LABELS, registration_open,
+                        set_registration_open, get_setting, set_setting)
 from app.utils import admin_required, compute_points_table
 
 admin_bp = Blueprint("admin", __name__)
@@ -45,15 +44,14 @@ def logout():
 def dashboard():
     counts = {
         "players": Player.query.count(),
-        "registered": Player.query.filter_by(status="registered").count(),
-        "sold": Player.query.filter_by(status="sold").count(),
+        "free": Player.query.filter(Player.team_id.is_(None)).count(),
+        "signed": Player.query.filter(Player.team_id.isnot(None)).count(),
         "teams": Team.query.count(),
         "matches": Match.query.count(),
         "completed": Match.query.filter_by(status="completed").count(),
     }
     return render_template("admin/dashboard.html", counts=counts,
-                           registration_on=registration_open(),
-                           auction_on=auction_open())
+                           registration_on=registration_open())
 
 
 @admin_bp.route("/toggle-registration", methods=["POST"])
@@ -65,18 +63,6 @@ def toggle_registration():
         flash("Player registration is now OPEN.", "success")
     else:
         flash("Player registration is now CLOSED.", "warning")
-    return redirect(url_for("admin.dashboard"))
-
-
-@admin_bp.route("/toggle-auction", methods=["POST"])
-@admin_required
-def toggle_auction():
-    now_open = not auction_open()
-    set_auction_open(now_open)
-    if now_open:
-        flash("The auction room is now OPEN.", "success")
-    else:
-        flash("The auction room is now CLOSED.", "warning")
     return redirect(url_for("admin.dashboard"))
 
 
@@ -99,6 +85,18 @@ def site_settings():
 
 # ---------- players ----------
 
+def _team_from_form():
+    """Return (team_or_None, ok) for the submitted team_id ('' = free agent)."""
+    raw = request.form.get("team_id", "")
+    if not raw:
+        return None, True
+    try:
+        team = Team.query.get(int(raw))
+    except ValueError:
+        team = None
+    return team, team is not None
+
+
 @admin_bp.route("/players", methods=["GET", "POST"])
 @admin_required
 def players():
@@ -107,20 +105,21 @@ def players():
         role = request.form.get("role", "")
         try:
             age = int(request.form.get("age", 0))
-            base_price = int(request.form.get("base_price", 20))
         except ValueError:
-            age, base_price = 0, 0
+            age = 0
+        team, team_ok = _team_from_form()
         if not name or role not in ROLES:
             flash("Name and a valid role are required.", "danger")
         else:
-            db.session.add(Player(name=name, age=age, role=role, base_price=base_price))
+            db.session.add(Player(name=name, age=age, role=role,
+                                  team_id=team.id if team else None))
             db.session.commit()
             flash(f"Player {name} added.", "success")
         return redirect(url_for("admin.players"))
 
-    all_players = Player.query.order_by(Player.status, Player.name).all()
+    all_players = Player.query.order_by(Player.team_id.is_(None).desc(), Player.name).all()
     return render_template("admin/players.html", players=all_players, roles=ROLES,
-                           statuses=PLAYER_STATUSES)
+                           teams=Team.query.order_by(Team.name).all())
 
 
 @admin_bp.route("/players/<int:player_id>/edit", methods=["POST"])
@@ -133,30 +132,18 @@ def edit_player(player_id):
         p.role = role
     try:
         p.age = int(request.form.get("age", p.age or 0))
-        p.base_price = int(request.form.get("base_price", p.base_price))
     except ValueError:
         pass
-    status = request.form.get("status", p.status)
-    if status in PLAYER_STATUSES:
-        if status != "sold" and p.status == "sold":
-            p.team_id = None
-            p.sold_price = None
-        p.status = status
+    team, team_ok = _team_from_form()
+    if team_ok:
+        new_team_id = team.id if team else None
+        if new_team_id != p.team_id and team \
+                and len(team.players) >= current_app.config["MAX_SQUAD_SIZE"]:
+            flash(f"{team.name} already has a full squad.", "danger")
+            return redirect(url_for("admin.players"))
+        p.team_id = new_team_id
     db.session.commit()
     flash(f"Player {p.name} updated.", "success")
-    return redirect(url_for("admin.players"))
-
-
-@admin_bp.route("/players/<int:player_id>/approve", methods=["POST"])
-@admin_required
-def approve_player(player_id):
-    p = Player.query.get_or_404(player_id)
-    if p.status != "registered":
-        flash(f"{p.name} is not waiting for approval.", "warning")
-    else:
-        p.status = "in_auction"
-        db.session.commit()
-        flash(f"{p.name} approved - he will now appear in the auction console.", "success")
     return redirect(url_for("admin.players"))
 
 
@@ -180,17 +167,13 @@ def teams():
         name = request.form.get("name", "").strip()
         short_name = request.form.get("short_name", "").strip().upper()
         owner_name = request.form.get("owner_name", "").strip()
-        try:
-            purse = int(request.form.get("purse", current_app.config["DEFAULT_PURSE"]))
-        except ValueError:
-            purse = current_app.config["DEFAULT_PURSE"]
         if not name or not short_name or not owner_name:
             flash("All team fields are required.", "danger")
         elif Team.query.filter_by(name=name).first():
             flash("A team with that name already exists.", "danger")
         else:
             db.session.add(Team(name=name, short_name=short_name,
-                                owner_name=owner_name, purse=purse))
+                                owner_name=owner_name))
             db.session.commit()
             flash(f"Team {name} created.", "success")
         return redirect(url_for("admin.teams"))
@@ -206,22 +189,8 @@ def edit_team(team_id):
     t.name = request.form.get("name", t.name).strip() or t.name
     t.short_name = (request.form.get("short_name", t.short_name).strip() or t.short_name).upper()
     t.owner_name = request.form.get("owner_name", t.owner_name).strip() or t.owner_name
-    try:
-        t.purse = int(request.form.get("purse", t.purse))
-    except ValueError:
-        pass
     db.session.commit()
     flash(f"Team {t.name} updated.", "success")
-    return redirect(url_for("admin.teams"))
-
-
-@admin_bp.route("/teams/<int:team_id>/regenerate-code", methods=["POST"])
-@admin_required
-def regenerate_code(team_id):
-    t = Team.query.get_or_404(team_id)
-    t.access_code = generate_access_code()
-    db.session.commit()
-    flash(f"New access code generated for {t.name}.", "success")
     return redirect(url_for("admin.teams"))
 
 

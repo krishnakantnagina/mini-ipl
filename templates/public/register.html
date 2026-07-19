@@ -30,11 +30,19 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Base price (in lakhs)</label>
-            <input type="number" name="base_price" class="form-control" min="1" value="20" required>
-            <div class="form-text">Example: 20 = ₹20 lakh, 100 = ₹1 crore</div>
+            <label class="form-label">Team</label>
+            <select name="team_id" class="form-select">
+              <option value="">— No team yet (admin can place me) —</option>
+              {% for t in teams %}
+              {% set full = t.players | length >= max_squad %}
+              <option value="{{ t.id }}" {% if full %}disabled{% endif %}>
+                {{ t.name }} ({{ t.players | length }}/{{ max_squad }}{% if full %} — FULL{% endif %})
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Join a team directly, or leave it for the admin to decide.</div>
           </div>
-          <button class="btn btn-success w-100">Register for Auction</button>
+          <button class="btn btn-success w-100">Register</button>
         </form>
         {% endif %}
       </div>

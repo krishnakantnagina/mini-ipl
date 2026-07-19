@@ -30,7 +30,6 @@ def login():
         if owner and check_password_hash(owner.password_hash, password):
             session["owner_id"] = owner.id
             session["owner_team_id"] = owner.team_id
-            session["bid_team_id"] = owner.team_id  # auto-unlock the bidding console
             flash(f"Welcome back! You own {owner.team.name}.", "success")
             return redirect(url_for("owner.dashboard"))
         flash("Wrong owner ID or password.", "danger")
@@ -39,7 +38,7 @@ def login():
 
 @owner_bp.route("/logout")
 def logout():
-    for key in ("owner_id", "owner_team_id", "bid_team_id"):
+    for key in ("owner_id", "owner_team_id"):
         session.pop(key, None)
     flash("Logged out.", "info")
     return redirect(url_for("public.index"))

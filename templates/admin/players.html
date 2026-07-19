@@ -16,7 +16,12 @@
           {% for r in roles %}<option>{{ r }}</option>{% endfor %}
         </select>
       </div>
-      <div class="col-md-2"><input name="base_price" type="number" class="form-control" placeholder="Base (L)" value="20" min="1"></div>
+      <div class="col-md-2">
+        <select name="team_id" class="form-select">
+          <option value="">No team</option>
+          {% for t in teams %}<option value="{{ t.id }}">{{ t.short_name }}</option>{% endfor %}
+        </select>
+      </div>
       <div class="col-md-2"><button class="btn btn-success w-100">Add</button></div>
     </form>
   </div>
@@ -25,7 +30,7 @@
 {% if players %}
 <div class="card">
   <table class="table table-hover mb-0">
-    <thead><tr><th>Name</th><th>Age</th><th>Role</th><th>Base</th><th>Status</th><th>Team</th><th style="width:220px">Actions</th></tr></thead>
+    <thead><tr><th>Name</th><th>Age</th><th>Role</th><th>Team</th><th style="width:220px">Actions</th></tr></thead>
     <tbody>
       {% for p in players %}
       <tr>
@@ -37,21 +42,17 @@
             {% for r in roles %}<option {% if p.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
           </select>
         </td>
-        <td><input name="base_price" type="number" class="form-control form-control-sm" value="{{ p.base_price }}" style="width:80px"></td>
         <td>
-          <select name="status" class="form-select form-select-sm">
-            {% for s in statuses %}<option {% if p.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+          <select name="team_id" class="form-select form-select-sm">
+            <option value="">Free agent</option>
+            {% for t in teams %}
+            <option value="{{ t.id }}" {% if p.team_id == t.id %}selected{% endif %}>{{ t.short_name }}</option>
+            {% endfor %}
           </select>
         </td>
-        <td>{{ p.team.short_name if p.team else '-' }}</td>
         <td class="d-flex gap-1">
           <button class="btn btn-sm btn-primary">Save</button>
         </form>
-          {% if p.status == 'registered' %}
-          <form method="post" action="{{ url_for('admin.approve_player', player_id=p.id) }}">
-            <button class="btn btn-sm btn-warning" title="Approve this player for the auction">To Auction</button>
-          </form>
-          {% endif %}
           <form method="post" action="{{ url_for('admin.delete_player', player_id=p.id) }}"
                 onsubmit="return confirm('Delete {{ p.name }}?')">
             <button class="btn btn-sm btn-outline-danger">Delete</button>

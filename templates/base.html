@@ -23,9 +23,6 @@
           ('public.points', 'Points'),
           ('public.stats', 'Stats'),
         ] %}
-        {% if auction_on or session.get('is_admin') %}
-          {% set nav = nav + [('auction.live_view', 'Auction')] %}
-        {% endif %}
         {% for endpoint, label in nav %}
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == endpoint %}active{% endif %}"

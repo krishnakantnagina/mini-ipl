@@ -10,10 +10,11 @@
       <option value="{{ r }}" {% if sel_role == r %}selected{% endif %}>{{ r }}</option>
       {% endfor %}
     </select>
-    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-      <option value="">All statuses</option>
-      {% for s in ['registered', 'in_auction', 'sold', 'unsold'] %}
-      <option value="{{ s }}" {% if sel_status == s %}selected{% endif %}>{{ s }}</option>
+    <select name="team" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">All teams</option>
+      <option value="free" {% if sel_team == 'free' %}selected{% endif %}>Free agents</option>
+      {% for t in teams %}
+      <option value="{{ t.id }}" {% if sel_team == t.id|string %}selected{% endif %}>{{ t.name }}</option>
       {% endfor %}
     </select>
   </form>
@@ -23,7 +24,7 @@
 <div class="card">
   <table class="table table-hover mb-0">
     <thead>
-      <tr><th>Name</th><th>Age</th><th>Role</th><th>Base Price</th><th>Status</th><th>Sold For</th><th>Team</th></tr>
+      <tr><th>Name</th><th>Age</th><th>Role</th><th>Team</th></tr>
     </thead>
     <tbody>
       {% for p in players %}
@@ -31,15 +32,13 @@
         <td>{{ p.name }}</td>
         <td>{{ p.age or '-' }}</td>
         <td>{{ p.role }}</td>
-        <td>{{ p.base_price | money }}</td>
         <td>
-          {% set colors = {'registered':'secondary','in_auction':'warning','sold':'success','unsold':'danger'} %}
-          <span class="badge bg-{{ colors[p.status] }}">{{ p.status }}</span>
-        </td>
-        <td>{{ p.sold_price | money if p.sold_price else '-' }}</td>
-        <td>
-          {% if p.team %}<a href="{{ url_for('public.team_detail', team_id=p.team.id) }}">{{ p.team.short_name }}</a>
-          {% else %}-{% endif %}
+          {% if p.team %}
+          <a href="{{ url_for('public.team_detail', team_id=p.team.id) }}" class="team-link">
+            <span class="team-dot team-dot-sm" style="background:{{ team_color(p.team) }}">{{ p.team.short_name }}</span>
+            {{ p.team.name }}
+          </a>
+          {% else %}<span class="badge bg-secondary">Free agent</span>{% endif %}
         </td>
       </tr>
       {% endfor %}

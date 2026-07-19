@@ -1,4 +1,4 @@
-.card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+﻿.card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 
 /* ---------- home page ---------- */
 .hero {
@@ -102,7 +102,7 @@
 .sched-name { font-weight: 600; }
 .sched-score { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; padding-right: 1rem; }
 .sched-winner { color: #14213d; }
-.sched-winner .sched-name::after { content: " •"; color: #198754; }
+.sched-winner .sched-name::after { content: " â€¢"; color: #198754; }
 .sched-meta { min-width: 140px; }
 @media (max-width: 575px) { .sched-meta { min-width: 100%; text-align: left !important; } }
 
@@ -149,7 +149,6 @@
 .form-W { background: #198754; }
 .form-L { background: #dc3545; }
 .form-T { background: #6c757d; }
-.bid-btn { font-size: 2rem; padding: 1rem 3rem; }
 .ticker { max-height: 300px; overflow-y: auto; }
 .stat-badge { font-size: 1.1rem; }
 .table > :not(caption) > * > * { vertical-align: middle; }
